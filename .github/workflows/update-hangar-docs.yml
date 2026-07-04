@@ -1,0 +1,36 @@
+name: Update Hangar Description
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update Hangar project page
+        env:
+          HANGAR_TOKEN: ${{ secrets.HANGAR_TOKEN }}
+        run: |
+          JWT=$(curl -s -X POST \
+            "https://hangar.papermc.io/api/v1/authenticate?apiKey=$HANGAR_TOKEN" \
+            -H "User-Agent: rpgmood-ci" | jq -r '.token')
+
+          echo "JWT prefix: ${JWT:0:20}..."
+
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X PATCH \
+            "https://hangar.papermc.io/api/v1/pages/edit/okereke-dev/RPGMood" \
+            -H "Authorization: HangarAuth $JWT" \
+            -H "User-Agent: rpgmood-ci" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\": \"Resource Page\", \"content\": $(jq -Rs . < .github/hangar-description.md)}")
+
+          echo "$RESPONSE"
+          HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d: -f2)
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "Failed with HTTP $HTTP_STATUS"
+            exit 1
+          fi
+          echo "Description updated successfully!"
