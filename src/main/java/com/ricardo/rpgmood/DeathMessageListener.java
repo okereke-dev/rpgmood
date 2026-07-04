@@ -1,0 +1,278 @@
+package com.ricardo.rpgmood;
+
+import org.bukkit.ChatColor;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
+
+public class DeathMessageListener implements Listener {
+
+    private final RPGMoodPlugin plugin;
+    private final Random random = new Random();
+    private static final Map<String, String> BIOME_ALIAS = Map.ofEntries(
+            Map.entry("sunflower_plains", "plains"),
+            Map.entry("meadow", "plains"),
+            Map.entry("flower_forest", "plains"),
+            Map.entry("forest", "dark_forest"),
+            Map.entry("birch_forest", "dark_forest"),
+            Map.entry("old_growth_birch_forest", "dark_forest"),
+            Map.entry("old_growth_pine_taiga", "snowy_taiga"),
+            Map.entry("old_growth_spruce_taiga", "snowy_taiga"),
+            Map.entry("giant_tree_taiga", "taiga"),
+            Map.entry("giant_spruce_taiga", "taiga"),
+            Map.entry("ice_spikes", "snowy_taiga"),
+            Map.entry("snowy_plains", "snowy_plains"),
+            Map.entry("snowy_mountains", "mountains"),
+            Map.entry("frozen_peaks", "mountains"),
+            Map.entry("jagged_peaks", "mountains"),
+            Map.entry("grove", "dark_forest"),
+            Map.entry("bamboo_jungle", "jungle"),
+            Map.entry("mangrove_swamp", "mangrove_swamp"),
+            Map.entry("crimson_forest", "crimson_forest"),
+            Map.entry("warped_forest", "warped_forest"),
+            Map.entry("basalt_deltas", "basalt_deltas"),
+            Map.entry("soul_sand_valley", "soul_sand_valley"),
+            Map.entry("nether_wastes", "nether_wastes"),
+            Map.entry("beach", "beach"),
+            Map.entry("river", "river"),
+            Map.entry("frozen_river", "river"),
+            Map.entry("ocean", "ocean"),
+            Map.entry("lukewarm_ocean", "ocean"),
+            Map.entry("warm_ocean", "ocean"),
+            Map.entry("deep_ocean", "ocean"),
+            Map.entry("cold_ocean", "ocean"),
+            Map.entry("frozen_ocean", "ocean")
+    );
+
+    public DeathMessageListener(RPGMoodPlugin plugin) {
+        this.plugin = plugin;
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        Player player = event.getEntity();
+        if (player == null) {
+            return;
+        }
+
+        String causeKey = detectCause(event);
+        String biomeKey = player.getLocation().getBlock().getBiome().name().toLowerCase(Locale.ROOT);
+        String locationName = resolveLocationName(player);
+        String killerKey = detectKiller(event);
+        boolean armed = hasWeapon(player);
+
+        String selectedMessage = selectMessage(causeKey, biomeKey, killerKey, player.getName(), locationName, armed);
+        if (selectedMessage != null && !selectedMessage.isBlank()) {
+            event.setDeathMessage(ChatColor.translateAlternateColorCodes('&', selectedMessage));
+        } else {
+            event.setDeathMessage("");
+        }
+    }
+
+    private String detectCause(PlayerDeathEvent event) {
+        if (event.getEntity().getLastDamageCause() == null) {
+            return "unknown";
+        }
+
+        String cause = event.getEntity().getLastDamageCause().getCause().name().toLowerCase(Locale.ROOT);
+        if (cause.contains("entity")) {
+            return "entity";
+        }
+        if (cause.contains("fire") || cause.contains("lava") || cause.contains("burn")) {
+            return "fire";
+        }
+        if (cause.contains("fall")) {
+            return "fall";
+        }
+        if (cause.contains("void")) {
+            return "void";
+        }
+        if (cause.contains("explosion")) {
+            return "explosion";
+        }
+        if (cause.contains("drowning")) {
+            return "drowning";
+        }
+        return cause;
+    }
+
+    private String detectKiller(PlayerDeathEvent event) {
+        Entity killer = event.getEntity().getKiller();
+        if (killer == null) {
+            return "none";
+        }
+        return killer.getType().name().toLowerCase(Locale.ROOT);
+    }
+
+    private String resolveLocationName(Player player) {
+        String biomeKey = player.getLocation().getBlock().getBiome().name().toLowerCase(Locale.ROOT);
+        String normalized = BIOME_ALIAS.getOrDefault(biomeKey, biomeKey);
+        var deathRoot = plugin.getConfig().getConfigurationSection("death_messages");
+        if (deathRoot == null) {
+            return biomeKey.replace('_', ' ');
+        }
+
+        var root = deathRoot.getConfigurationSection("location_names");
+        if (root == null) {
+            return biomeKey.replace('_', ' ');
+        }
+
+        List<String> names = root.getStringList(normalized);
+        if (!names.isEmpty()) {
+            return buildLocationName(deathRoot, normalized, names);
+        }
+
+        if (!normalized.equals(biomeKey)) {
+            names = root.getStringList(biomeKey);
+            if (!names.isEmpty()) {
+                return buildLocationName(deathRoot, biomeKey, names);
+            }
+        }
+
+        // Try flexible matching against configured keys (allows fuzzy matches like snowy_plains -> snowy_taiga)
+        for (String key : root.getKeys(false)) {
+            String k = key.toLowerCase(Locale.ROOT);
+            String cleanKey = k.replaceAll("[ _]", "");
+            String cleanBiome = normalized.replaceAll("[ _]", "");
+            if (cleanBiome.contains(cleanKey) || cleanKey.contains(cleanBiome) || normalized.contains(k) || k.contains(normalized)) {
+                List<String> alt = root.getStringList(key);
+                if (!alt.isEmpty()) {
+                    return buildLocationName(deathRoot, key, alt);
+                }
+            }
+        }
+
+        // Fallback: pretty biome name
+        return biomeKey.replace('_', ' ');
+    }
+
+    private String buildLocationName(org.bukkit.configuration.ConfigurationSection deathRoot, String normalized, List<String> names) {
+        String base = names.get(random.nextInt(names.size()));
+        String template = pickRandom(deathRoot, "location_name_templates");
+        String descriptor = pickDescriptor(deathRoot, normalized);
+
+        if (template == null || template.isBlank() || template.equals("{base}") || descriptor == null || descriptor.isBlank()) {
+            return base;
+        }
+        return formatLocationName(template, base, descriptor);
+    }
+
+    private String pickDescriptor(org.bukkit.configuration.ConfigurationSection root, String normalized) {
+        List<String> descriptors = root.getStringList("location_name_descriptors." + normalized);
+        if (descriptors == null || descriptors.isEmpty()) {
+            descriptors = root.getStringList("location_name_descriptors.default");
+        }
+        if (descriptors == null || descriptors.isEmpty()) {
+            return null;
+        }
+        return descriptors.get(random.nextInt(descriptors.size()));
+    }
+
+    private String formatLocationName(String template, String base, String descriptor) {
+        return template.replace("{base}", base).replace("{descriptor}", descriptor);
+    }
+
+    private boolean hasWeapon(Player player) {
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item == null) {
+                continue;
+            }
+            String type = item.getType().name().toLowerCase(Locale.ROOT);
+            if (type.contains("sword") || type.contains("axe") || type.contains("bow") || type.contains("trident") || type.contains("pickaxe") || type.contains("shield")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String selectMessage(String causeKey, String biomeKey, String killerKey, String playerName, String locationName, boolean armed) {
+        var root = plugin.getConfig().getConfigurationSection("death_messages");
+        if (root == null) {
+            return null;
+        }
+
+        List<String> templates = new java.util.ArrayList<>();
+        templates.addAll(getTemplates(root, "causes." + causeKey));
+        templates.addAll(getTemplates(root, "biomes." + biomeKey));
+        if (!"none".equals(killerKey)) {
+            templates.addAll(getTemplates(root, "killers." + killerKey));
+        }
+        templates.addAll(getTemplates(root, "armed." + armed));
+        templates.addAll(getTemplates(root, "fallback"));
+
+        if (templates.isEmpty()) {
+            return null;
+        }
+
+        String chosen = templates.get(random.nextInt(templates.size()));
+        String killerName = "none".equals(killerKey) ? "" : pickRandom(root, "killer_synonyms." + killerKey);
+        if (killerName == null || killerName.isBlank()) {
+            killerName = killerKey.replace('_', ' ');
+        }
+
+        return fillPlaceholders(chosen, playerName, locationName, killerName, biomeKey, armed);
+    }
+
+    private List<String> getTemplates(org.bukkit.configuration.ConfigurationSection root, String path) {
+        return root.getStringList(path);
+    }
+
+    private String pickRandom(org.bukkit.configuration.ConfigurationSection root, String path) {
+        List<String> templates = root.getStringList(path);
+        if (templates == null || templates.isEmpty()) {
+            return null;
+        }
+        return templates.get(random.nextInt(templates.size()));
+    }
+
+    private String pickRandomNonNull(String... phrases) {
+        java.util.List<String> valid = new java.util.ArrayList<>();
+        for (String phrase : phrases) {
+            if (phrase != null && !phrase.isBlank()) {
+                valid.add(phrase);
+            }
+        }
+        if (valid.isEmpty()) {
+            return null;
+        }
+        return valid.get(random.nextInt(valid.size()));
+    }
+
+    private void appendPhrase(StringBuilder message, String phrase, String playerName, String locationName, String killerName, String biomeKey, boolean armed) {
+        if (phrase == null || phrase.isBlank()) {
+            return;
+        }
+        String filled = fillPlaceholders(phrase, playerName, locationName, killerName, biomeKey, armed);
+        if (filled.isBlank()) {
+            return;
+        }
+        if (!message.toString().endsWith(" ")) {
+            message.append(' ');
+        }
+        message.append(filled);
+    }
+
+    private String fillPlaceholders(String template, String playerName, String locationName, String killerName, String biomeKey, boolean armed) {
+        return template.replace("{player}", playerName)
+                .replace("{biome}", biomeKey.replace('_', ' '))
+                .replace("{location}", locationName)
+                .replace("{killer}", capitalize(killerName))
+                .replace("{armed}", armed ? "armed" : "unarmed");
+    }
+
+    private String capitalize(String value) {
+        if (value == null || value.isBlank()) {
+            return value;
+        }
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
+    }
+}

@@ -1,0 +1,59 @@
+# ==========================================
+#          RPGMood - Environment Messages
+# ==========================================
+
+time_events:
+  dawn_arrival:
+    trigger: "on_time_change"
+    time: 2300
+    message: "&e[Ambient] &7Dawn breaks. The world stirs anew, and the air tastes of fresh danger."
+    sound: "entity.chicken.egg"
+  morning_breeze:
+    trigger: "on_time_change"
+    time: 6000
+    message: "&e[Ambient] &7A calm morning breeze whispers through the land."
+    sound: "ambient.weather.rain"
+  midday_rise:
+    trigger: "on_time_change"
+    time: 10000
+    message: "&e[Ambient] &7The sun climbs high. The realm is bright, but danger still hides in shade."
+    sound: "entity.experience_orb.pickup"
+  dusk_approach:
+    trigger: "on_time_change"
+    time: 13000
+    message: "&e[Ambient] &7Night is closing in, it might be wise to seek shelter..."
+    sound: "entity.wolf.howl"
+  midnight_haunt:
+    trigger: "on_time_change"
+    time: 18000
+    message: "&e[Ambient] &7The world grows quiet, but the shadows grow hungry."
+    sound: "entity.ghost.ambient"
+
+weather_events:
+  rain_start:
+    weather: "rain"
+    state: "start"
+    message: "&bThe sky darkens and rain begins to fall over {location}."
+    sound: "ambient.weather.rain"
+  rain_end:
+    weather: "rain"
+    state: "stop"
+    message: "&aThe rain eases, leaving behind a glistening path."
+    sound: "entity.item.pickup"
+  thunder_start:
+    weather: "thunder"
+    state: "start"
+    message: "&8Thunder cracks across the skies above {location}."
+    sound: "entity.lightning_bolt.thunder"
+  thunder_end:
+    weather: "thunder"
+    state: "stop"
+    message: "&7The storm fades, but the air still crackles with danger."
+    sound: "entity.player.levelup"
+
+block_events:
+  diamond_ore:
+    trigger: "on_block_break"
+    block: "DIAMOND_ORE"
+    chance: 30
+    message: "&e[Ambient] &bAn ancient energy emanates from the broken crystal..."

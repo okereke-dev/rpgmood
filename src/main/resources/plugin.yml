@@ -1,0 +1,23 @@
+name: RPGMood
+version: 1.0.0
+main: com.ricardo.rpgmood.RPGMoodPlugin
+api-version: '1.20'
+author: Ricardo
+softdepend: [PlaceholderAPI, WorldGuard]
+commands:
+  rpgmood:
+    description: Main RPGMood commands
+    usage: /rpgmood <reload|toggle>
+    permission: rpgmood.admin
+  diary:
+    description: Opens the player's adventure journal
+    usage: /diary
+    aliases: [diario]
+    permission: rpgmood.player.diary
+permissions:
+  rpgmood.admin:
+    default: op
+  rpgmood.player.diary:
+    default: true
+  rpgmood.player.toggle:
+    default: true
