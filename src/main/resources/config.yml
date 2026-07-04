@@ -24,6 +24,12 @@ mob_scaling:
     step_distance: 180
   players_bonus_per_player: 1
   name_format: "&cLv. {level} {name}"
+  bonus_xp_per_level: 2
+  announcement:
+    enabled: true
+    min-level: 25
+    cooldown-seconds: 120
+    message: "&c⚠ A Level {level} {name} has emerged in {biome}!"
   base-levels:
     ZOMBIE: 1
     SKELETON: 2
@@ -165,6 +171,17 @@ death_messages:
       - "&c{player} went for a teleport trip and never came back."
       - "&c{player} found out that {killer}s have no sense of personal space."
       - "&c{player} became a cautionary tale about looking at tall, dark strangers."
+    player:
+      - "&c{player} was struck down by {killer}."
+      - "&c{player} lost a duel against {killer}."
+      - "&c{player} fell in combat to {killer}."
+      - "&c{player} was outplayed by {killer}."
+      - "&c{player} challenged {killer} and paid the price."
+      - "&c{player} couldn't match {killer}'s blade."
+      - "&c{player} was bested by {killer} in single combat."
+      - "&c{player} met their end at the hands of {killer}."
+      - "&c{player} was no match for {killer} today."
+      - "&c{player} was defeated by {killer}."
   killer_synonyms:
     zombie:
       - "zombie"
@@ -264,6 +281,63 @@ death_messages:
       - "storm-scarred"
       - "half-forgotten"
       - "silent"
+    plains:
+      - "windswept"
+      - "sun-drenched"
+      - "golden"
+      - "wildflower-strewn"
+      - "far-reaching"
+      - "quiet"
+    dark_forest:
+      - "shadow-choked"
+      - "moss-shrouded"
+      - "whispering"
+      - "tangled"
+      - "gloom-veiled"
+      - "root-bound"
+    desert:
+      - "sun-scorched"
+      - "wind-scoured"
+      - "mirage-haunted"
+      - "cracked"
+      - "heat-shimmering"
+      - "endless"
+    taiga:
+      - "frost-bitten"
+      - "pine-shrouded"
+      - "snow-laced"
+      - "wind-howling"
+      - "ice-locked"
+    snowy_taiga:
+      - "blizzard-swept"
+      - "frozen"
+      - "silver-frosted"
+      - "glacial"
+      - "wind-bitten"
+    jungle:
+      - "vine-choked"
+      - "humid"
+      - "canopy-shrouded"
+      - "restless"
+      - "overgrown"
+    swamp:
+      - "fog-drowned"
+      - "murk-soaked"
+      - "reeking"
+      - "waterlogged"
+      - "mist-choked"
+    ocean:
+      - "storm-tossed"
+      - "tide-worn"
+      - "salt-crusted"
+      - "wave-battered"
+      - "current-swept"
+    nether_wastes:
+      - "ash-drenched"
+      - "sulfur-choked"
+      - "scorched"
+      - "smoldering"
+      - "ember-lit"
   location_names:
     plains:
       - "Elden Meadows"

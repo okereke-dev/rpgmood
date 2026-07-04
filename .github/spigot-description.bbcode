@@ -14,6 +14,9 @@ Hostile mobs gain levels based on [B]distance from spawn[/B], [B]biome[/B], [B]n
 [*]Per-mob-type difficulty seeds (Zombie is easier than Wither Skeleton at the same distance)
 [*]Biome and structure bonuses are fully configurable — make deserts scarier, or strongholds a real threat
 [*]Structure-proximity checks are cached per region, so this stays cheap even with heavy mob spawning
+[*][B]Bonus XP on kill[/B], proportional to the mob's level — difficulty isn't just punishment
+[*][B]Server-wide announcement[/B] when a dangerously high-level mob spawns (configurable threshold and cooldown)
+[*]Every scaled mob's level is exposed via PersistentDataContainer for other plugins (e.g. loot plugins) to hook into
 [*]Fully tunable in config.yml: health/damage/armor/speed growth per level, max level cap, and every bonus source
 [/LIST]
 
@@ -21,7 +24,7 @@ Hostile mobs gain levels based on [B]distance from spawn[/B], [B]biome[/B], [B]n
 
 [SIZE=4][B]🗺 Zones[/B][/SIZE]
 
-Crossing into a new zone shows a title/subtitle, plays a sound, and drops a short flavor line in chat a moment later.
+Crossing into a new zone shows a title/subtitle, plays a sound and particles, and drops a short flavor line in chat a moment later.
 
 [LIST]
 [*][B]Biome zones[/B] — trigger when you enter a configured biome
@@ -36,7 +39,7 @@ Crossing into a new zone shows a title/subtitle, plays a sound, and drops a shor
 Every death gets a narrative message instead of the vanilla one — composed, not just picked from a list:
 
 [LIST]
-[*]A core line reacts to [B]cause of death[/B], [B]biome[/B], and [B]killer type[/B]
+[*]A core line reacts to [B]cause of death[/B], [B]biome[/B], and [B]killer type[/B] — including PvP kills, which correctly name the killing player
 [*]Killer names get randomized synonyms (a Zombie might be called a "shambling snack" or "graveyard gremlin")
 [*]An independent ~45% chance appends a closing flourish ("The night keeps its own score.")
 [*]Location names get an independent descriptor prefix ("the storm-worn Elden Meadows")
@@ -47,11 +50,11 @@ Every death is also saved to the player's persistent adventure journal.
 
 [COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
 
-[SIZE=4][B]📖 Adventure Journal & Emotes[/B][/SIZE]
+[SIZE=4][B]📖 Adventure Journal & Leaderboard[/B][/SIZE]
 
 [LIST]
 [*]/diary opens a written book listing the player's recent zone arrivals and deaths, timestamped and persisted across restarts
-[*]/emote plays a short particle/sound effect
+[*]/rpgmood leaderboard shows the top 10 players by deaths, zone changes, or highest-level mob killed
 [/LIST]
 
 [COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]

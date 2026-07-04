@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0] — 2026-07-04
+
+### Added
+- **Bonus XP on kill** — killing a scaled mob grants XP proportional to its level (`mob_scaling.bonus_xp_per_level`)
+- **High-level mob announcements** — server-wide broadcast when a dangerously scaled mob spawns (configurable threshold/cooldown)
+- **Cross-plugin level exposure** — every scaled mob's level is stored via `PersistentDataContainer` (`rpgmood:level`) for other plugins (e.g. loot plugins) to read
+- **Leaderboard** — `/rpgmood leaderboard [deaths|zones|level]`, persisted in `stats.yml`
+- **Zone particles** — the `particles` field in `zones.yml` (previously unused) now actually spawns particles on zone entry
+- **PvP death messages** — a player killed by another player now gets a `killers.player` message naming the actual killer, instead of falling back to generic wilderness flavor text
+- Per-biome location name descriptors (plains, dark_forest, desert, taiga, snowy_taiga, jungle, swamp, ocean, nether_wastes) in addition to the shared `default` pool
+
+### Removed
+- **Emotes** (`/emote`) — removed entirely rather than kept as a single generic, unfinished effect
+
 ## [1.0.0] — 2026-07-04
 
 Initial release.

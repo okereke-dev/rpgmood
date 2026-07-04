@@ -12,6 +12,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.StructureType;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -23,6 +24,13 @@ public class MobScalingService {
     private static final int STRUCTURE_CACHE_GRID_SIZE = 128;
     private static final int STRUCTURE_CACHE_MAX_ENTRIES = 4096;
 
+    /**
+     * PDC key storing the mob's scaled level as an Integer, e.g. for other plugins (RPGLoot) to read
+     * and scale drop rarity by difficulty. Namespaced under this plugin, so it's readable by anyone as
+     * "rpgmood:level" without a hard dependency on RPGMood.
+     */
+    private final NamespacedKey levelKey;
+
     private final RPGMoodPlugin plugin;
     private final Map<String, Integer> structureBonusCache = new LinkedHashMap<>(256, 0.75f, true) {
         @Override
@@ -33,6 +41,11 @@ public class MobScalingService {
 
     public MobScalingService(RPGMoodPlugin plugin) {
         this.plugin = plugin;
+        this.levelKey = new NamespacedKey(plugin, "level");
+    }
+
+    public NamespacedKey getLevelKey() {
+        return levelKey;
     }
 
     public boolean isEnabled() {
@@ -49,14 +62,15 @@ public class MobScalingService {
         return entity instanceof Monster;
     }
 
-    public void applyScaling(LivingEntity entity) {
+    /** Applies scaling to the entity and returns the level applied, or -1 if it was skipped/not scaled. */
+    public int applyScaling(LivingEntity entity) {
         if (entity == null || !shouldScale(entity) || entity.getScoreboardTags().contains("rpgmood_scaled")) {
-            return;
+            return -1;
         }
 
         int level = calculateLevel(entity);
         if (level <= 0) {
-            return;
+            return -1;
         }
 
         double health = Math.max(10.0, 14.0 + (level - 1) * plugin.getConfig().getDouble("mob_scaling.health_per_level", 2.0));
@@ -86,10 +100,12 @@ public class MobScalingService {
         }
 
         entity.addScoreboardTag("rpgmood_scaled");
+        entity.getPersistentDataContainer().set(levelKey, PersistentDataType.INTEGER, level);
         entity.setCustomName(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("mob_scaling.name_format", "&cLv. {level} {name}")
                 .replace("{level}", String.valueOf(level))
                 .replace("{name}", entity.getName())));
         entity.setCustomNameVisible(true);
+        return level;
     }
 
     public int calculateLevel(LivingEntity entity) {

@@ -4,12 +4,12 @@ An ambient RPG plugin for Spigot/Paper servers. Scales hostile mobs by distance,
 
 ## Features
 
-- **Mob scaling** — hostile mobs gain levels (health, damage, armor, speed) based on distance from spawn, biome, and nearby structures.
+- **Mob scaling** — hostile mobs gain levels (health, damage, armor, speed) based on distance from spawn, biome, and nearby structures; grants bonus XP on kill and broadcasts an announcement for dangerously high-level spawns.
 - **Adventure journal** — `/diary` opens a personal log of the player's journey.
-- **Narrative death messages** — biome- and killer-aware flavor text instead of vanilla death messages.
-- **Zones & ambience** — configurable zones with ambient effects and ambient sound/particle tasks.
-- **Emotes** — player emote command.
-- Soft-integrates with **PlaceholderAPI** and **WorldGuard**.
+- **Leaderboard** — `/rpgmood leaderboard` for top deaths, zone changes, or highest mob level killed.
+- **Narrative death messages** — biome-, killer-, and PvP-aware flavor text instead of vanilla death messages.
+- **Zones & ambience** — configurable zones with titles, sounds, particles, and flavor text.
+- Soft-integrates with **PlaceholderAPI** and **WorldGuard**; exposes each mob's level via `PersistentDataContainer` for other plugins to read.
 
 ## Installation
 

@@ -1,13 +1,19 @@
 package com.ricardo.rpgmood;
 
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.entity.LivingEntity;
+
+import java.util.Locale;
 
 public class MobSpawnListener implements Listener {
 
     private final RPGMoodPlugin plugin;
+    private long lastAnnouncementMillis = 0L;
 
     public MobSpawnListener(RPGMoodPlugin plugin) {
         this.plugin = plugin;
@@ -25,6 +31,51 @@ public class MobSpawnListener implements Listener {
         if (plugin.getMobScalingService() == null) {
             return;
         }
-        plugin.getMobScalingService().applyScaling(entity);
+        int level = plugin.getMobScalingService().applyScaling(entity);
+        if (level > 0) {
+            maybeAnnounce(entity, level);
+        }
+    }
+
+    private void maybeAnnounce(LivingEntity entity, int level) {
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("mob_scaling.announcement");
+        if (section == null || !section.getBoolean("enabled", false)) {
+            return;
+        }
+
+        if (level < section.getInt("min-level", 25)) {
+            return;
+        }
+
+        long cooldownMillis = section.getLong("cooldown-seconds", 120L) * 1000L;
+        long now = System.currentTimeMillis();
+        if (now - lastAnnouncementMillis < cooldownMillis) {
+            return;
+        }
+        lastAnnouncementMillis = now;
+
+        String mobName = prettify(entity.getType().name());
+        String biomeName = prettify(entity.getLocation().getBlock().getBiome().name());
+        String message = section.getString("message", "&c⚠ A Level {level} {name} has emerged in {biome}!")
+                .replace("{level}", String.valueOf(level))
+                .replace("{name}", mobName)
+                .replace("{biome}", biomeName);
+
+        Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', message));
+    }
+
+    private String prettify(String enumName) {
+        String[] parts = enumName.toLowerCase(Locale.ROOT).split("_");
+        StringBuilder builder = new StringBuilder();
+        for (String part : parts) {
+            if (part.isBlank()) {
+                continue;
+            }
+            if (builder.length() > 0) {
+                builder.append(' ');
+            }
+            builder.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return builder.toString();
     }
 }

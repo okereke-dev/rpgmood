@@ -16,13 +16,16 @@ Hostile mobs gain levels based on **distance from spawn**, **biome**, **nearby v
 - Per-mob-type difficulty seeds (Zombie is easier than Wither Skeleton at the same distance)
 - Biome and structure bonuses are fully configurable — make deserts scarier, or strongholds a real threat
 - Structure-proximity checks are cached per region, so this stays cheap even with heavy mob spawning
+- **Bonus XP on kill**, proportional to the mob's level — difficulty isn't just punishment
+- **Server-wide announcement** when a dangerously high-level mob spawns (configurable threshold and cooldown)
+- Every scaled mob's level is exposed via `PersistentDataContainer` for other plugins (e.g. loot plugins) to hook into
 - Fully tunable in `config.yml`: health/damage/armor/speed growth per level, max level cap, and every bonus source
 
 ---
 
 ## 🗺️ Zones
 
-Crossing into a new zone shows a title/subtitle, plays a sound, and drops a short flavor line in chat a moment later.
+Crossing into a new zone shows a title/subtitle, plays a sound and particles, and drops a short flavor line in chat a moment later.
 
 - **Biome zones** — trigger when you enter a configured biome
 - **WorldGuard zones** — trigger when you step inside a named WorldGuard region (optional integration)
@@ -34,7 +37,7 @@ Crossing into a new zone shows a title/subtitle, plays a sound, and drops a shor
 
 Every death gets a narrative message instead of the vanilla one — composed, not just picked from a list:
 
-- A core line reacts to **cause of death**, **biome**, and **killer type**
+- A core line reacts to **cause of death**, **biome**, and **killer type** — including PvP kills, which correctly name the killing player
 - Killer names get randomized synonyms (a Zombie might be called a "shambling snack" or "graveyard gremlin")
 - An independent ~45% chance appends a closing flourish ("The night keeps its own score.")
 - Location names get an independent descriptor prefix ("the storm-worn Elden Meadows")
@@ -44,10 +47,10 @@ Every death is also saved to the player's persistent adventure journal.
 
 ---
 
-## 📖 Adventure Journal & Emotes
+## 📖 Adventure Journal & Leaderboard
 
 - `/diary` opens a written book listing the player's recent zone arrivals and deaths, timestamped and persisted across restarts
-- `/emote` plays a short particle/sound effect
+- `/rpgmood leaderboard` shows the top 10 players by deaths, zone changes, or highest-level mob killed
 
 ---
 

@@ -20,12 +20,16 @@ public class RPGMoodCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle|info").color(NamedTextColor.RED));
+            sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle|info|leaderboard").color(NamedTextColor.RED));
             return true;
         }
 
         if (args[0].equalsIgnoreCase("info")) {
             return handleInfo(sender);
+        }
+
+        if (args[0].equalsIgnoreCase("leaderboard")) {
+            return handleLeaderboard(sender, args);
         }
 
         if (args[0].equalsIgnoreCase("reload")) {
@@ -54,7 +58,46 @@ public class RPGMoodCommand implements CommandExecutor {
             return true;
         }
 
-        sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle|info").color(NamedTextColor.RED));
+        sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle|info|leaderboard").color(NamedTextColor.RED));
+        return true;
+    }
+
+    private boolean handleLeaderboard(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("rpgmood.player.leaderboard")) {
+            sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(plugin.getConfig().getString("messages.no_permission", "&cNo permission")));
+            return true;
+        }
+
+        String category = args.length > 1 ? args[1].toLowerCase() : "deaths";
+        java.util.List<PlayerStatsService.StatEntry> top;
+        String title;
+        switch (category) {
+            case "zones" -> {
+                top = plugin.getPlayerStatsService().getTopZoneChanges(10);
+                title = "Zone Changes";
+            }
+            case "level" -> {
+                top = plugin.getPlayerStatsService().getTopMobLevel(10);
+                title = "Highest Mob Level Killed";
+            }
+            default -> {
+                top = plugin.getPlayerStatsService().getTopDeaths(10);
+                title = "Deaths";
+            }
+        }
+
+        sender.sendMessage(Component.text("=== " + title + " Leaderboard ===").color(NamedTextColor.GOLD));
+        if (top.isEmpty()) {
+            sender.sendMessage(Component.text("No data yet.").color(NamedTextColor.GRAY));
+            return true;
+        }
+        int rank = 1;
+        for (PlayerStatsService.StatEntry entry : top) {
+            sender.sendMessage(Component.text(rank + ". ").color(NamedTextColor.GRAY)
+                    .append(Component.text(entry.name()).color(NamedTextColor.WHITE))
+                    .append(Component.text(" — " + entry.value()).color(NamedTextColor.YELLOW)));
+            rank++;
+        }
         return true;
     }
 

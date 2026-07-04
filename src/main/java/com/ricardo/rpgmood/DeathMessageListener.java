@@ -71,13 +71,16 @@ public class DeathMessageListener implements Listener {
             return;
         }
 
+        plugin.getPlayerStatsService().recordDeath(player);
+
         String causeKey = detectCause(event);
         String biomeKey = player.getLocation().getBlock().getBiome().name().toLowerCase(Locale.ROOT);
         String locationName = resolveLocationName(player);
         String killerKey = detectKiller(event);
+        Entity killerEntity = event.getEntity().getKiller();
         boolean armed = hasWeapon(player);
 
-        String selectedMessage = selectMessage(causeKey, biomeKey, killerKey, player, locationName, armed);
+        String selectedMessage = selectMessage(causeKey, biomeKey, killerKey, killerEntity, player, locationName, armed);
         if (selectedMessage != null && !selectedMessage.isBlank()) {
             String translated = ChatColor.translateAlternateColorCodes('&', selectedMessage);
             event.setDeathMessage(translated);
@@ -208,7 +211,7 @@ public class DeathMessageListener implements Listener {
         return false;
     }
 
-    private String selectMessage(String causeKey, String biomeKey, String killerKey, Player player, String locationName, boolean armed) {
+    private String selectMessage(String causeKey, String biomeKey, String killerKey, Entity killerEntity, Player player, String locationName, boolean armed) {
         var root = plugin.getConfig().getConfigurationSection("death_messages");
         if (root == null) {
             return null;
@@ -235,19 +238,31 @@ public class DeathMessageListener implements Listener {
         }
         lastTemplates.put(id, chosen);
 
-        String killerName = "none".equals(killerKey) ? "" : pickRandom(root, "killer_synonyms." + killerKey);
-        if (killerName == null || killerName.isBlank()) {
-            killerName = killerKey.replace('_', ' ');
-        }
+        String killerName = resolveKillerName(killerKey, killerEntity, root);
+        boolean killerNameIsProper = killerEntity instanceof Player;
 
-        String core = fillPlaceholders(chosen, player.getName(), locationName, killerName, biomeKey, armed);
+        String core = fillPlaceholders(chosen, player.getName(), locationName, killerName, biomeKey, armed, killerNameIsProper);
 
         String modifier = pickRandom(root, "modifiers");
         if (modifier != null && !modifier.isBlank() && random.nextInt(100) < MODIFIER_CHANCE) {
-            core = core + " " + fillPlaceholders(modifier, player.getName(), locationName, killerName, biomeKey, armed);
+            core = core + " " + fillPlaceholders(modifier, player.getName(), locationName, killerName, biomeKey, armed, killerNameIsProper);
         }
 
         return core;
+    }
+
+    private String resolveKillerName(String killerKey, Entity killerEntity, org.bukkit.configuration.ConfigurationSection root) {
+        if ("none".equals(killerKey)) {
+            return "";
+        }
+        if (killerEntity instanceof Player killerPlayer) {
+            return killerPlayer.getName();
+        }
+        String killerName = pickRandom(root, "killer_synonyms." + killerKey);
+        if (killerName == null || killerName.isBlank()) {
+            killerName = killerKey.replace('_', ' ');
+        }
+        return killerName;
     }
 
     private List<String> getTemplates(org.bukkit.configuration.ConfigurationSection root, String path) {
@@ -262,11 +277,11 @@ public class DeathMessageListener implements Listener {
         return templates.get(random.nextInt(templates.size()));
     }
 
-    private String fillPlaceholders(String template, String playerName, String locationName, String killerName, String biomeKey, boolean armed) {
+    private String fillPlaceholders(String template, String playerName, String locationName, String killerName, String biomeKey, boolean armed, boolean killerNameIsProper) {
         return template.replace("{player}", playerName)
                 .replace("{biome}", biomeKey.replace('_', ' '))
                 .replace("{location}", locationName)
-                .replace("{killer}", capitalize(killerName))
+                .replace("{killer}", killerNameIsProper ? killerName : capitalize(killerName))
                 .replace("{armed}", armed ? "armed" : "unarmed");
     }
 

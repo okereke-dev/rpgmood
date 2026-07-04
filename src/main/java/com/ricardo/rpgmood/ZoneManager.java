@@ -3,6 +3,7 @@ package com.ricardo.rpgmood;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.ChatColor;
+import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -622,6 +623,7 @@ public class ZoneManager {
 
         cooldowns.put(id, now);
         lastZones.put(id, currentZone);
+        plugin.getPlayerStatsService().recordZoneChange(player);
         sendZoneFeedback(player, currentZone);
     }
 
@@ -673,6 +675,18 @@ public class ZoneManager {
         return String.format("%s|%s|%s|%d|%d", DYNAMIC_ZONE_PREFIX, biomeGroup, worldName, regionX, regionZ);
     }
 
+    private void spawnZoneParticles(Player player, String particleName) {
+        if (particleName == null || particleName.isBlank() || "NONE".equalsIgnoreCase(particleName)) {
+            return;
+        }
+        try {
+            Particle particle = Particle.valueOf(particleName.toUpperCase(Locale.ROOT));
+            player.getWorld().spawnParticle(particle, player.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5, 0.02);
+        } catch (IllegalArgumentException ex) {
+            // Unknown particle name in zones.yml — skip silently rather than spam the console on every zone entry.
+        }
+    }
+
     private boolean isBiomeMatch(String configuredId, String currentBiome) {
         String normalizedConfigured = configuredId.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
         if (normalizedConfigured.equals(currentBiome)) {
@@ -708,6 +722,10 @@ public class ZoneManager {
         String legacySubtitle = ChatColor.translateAlternateColorCodes('&', subtitleText);
         player.sendTitle(legacyTitle, legacySubtitle, 10, 40, 10);
         player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+
+        if (section != null) {
+            spawnZoneParticles(player, section.getString("particles", "NONE"));
+        }
 
         if (!titleText.isBlank()) {
             plugin.getPlayerJournalService().addEntry(player, "Arrived at " + legacyTitle + ChatColor.RESET + ".");
