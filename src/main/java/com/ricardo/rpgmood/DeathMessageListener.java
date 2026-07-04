@@ -7,17 +7,24 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 public class DeathMessageListener implements Listener {
 
+    /** Chance (0-99) that a closing "modifiers" flourish is appended to the chosen message. */
+    private static final int MODIFIER_CHANCE = 45;
+
     private final RPGMoodPlugin plugin;
     private final Random random = new Random();
+    private final Map<UUID, String> lastTemplates = new HashMap<>();
     private static final Map<String, String> BIOME_ALIAS = Map.ofEntries(
             Map.entry("sunflower_plains", "plains"),
             Map.entry("meadow", "plains"),
@@ -70,7 +77,7 @@ public class DeathMessageListener implements Listener {
         String killerKey = detectKiller(event);
         boolean armed = hasWeapon(player);
 
-        String selectedMessage = selectMessage(causeKey, biomeKey, killerKey, player.getName(), locationName, armed);
+        String selectedMessage = selectMessage(causeKey, biomeKey, killerKey, player, locationName, armed);
         if (selectedMessage != null && !selectedMessage.isBlank()) {
             String translated = ChatColor.translateAlternateColorCodes('&', selectedMessage);
             event.setDeathMessage(translated);
@@ -78,6 +85,11 @@ public class DeathMessageListener implements Listener {
         } else {
             event.setDeathMessage("");
         }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        lastTemplates.remove(event.getPlayer().getUniqueId());
     }
 
     private String detectCause(PlayerDeathEvent event) {
@@ -196,7 +208,7 @@ public class DeathMessageListener implements Listener {
         return false;
     }
 
-    private String selectMessage(String causeKey, String biomeKey, String killerKey, String playerName, String locationName, boolean armed) {
+    private String selectMessage(String causeKey, String biomeKey, String killerKey, Player player, String locationName, boolean armed) {
         var root = plugin.getConfig().getConfigurationSection("death_messages");
         if (root == null) {
             return null;
@@ -215,13 +227,27 @@ public class DeathMessageListener implements Listener {
             return null;
         }
 
+        UUID id = player.getUniqueId();
         String chosen = templates.get(random.nextInt(templates.size()));
+        if (templates.size() > 1 && chosen.equals(lastTemplates.get(id))) {
+            // Avoid repeating the exact same line back-to-back; a single re-roll is enough to break streaks.
+            chosen = templates.get(random.nextInt(templates.size()));
+        }
+        lastTemplates.put(id, chosen);
+
         String killerName = "none".equals(killerKey) ? "" : pickRandom(root, "killer_synonyms." + killerKey);
         if (killerName == null || killerName.isBlank()) {
             killerName = killerKey.replace('_', ' ');
         }
 
-        return fillPlaceholders(chosen, playerName, locationName, killerName, biomeKey, armed);
+        String core = fillPlaceholders(chosen, player.getName(), locationName, killerName, biomeKey, armed);
+
+        String modifier = pickRandom(root, "modifiers");
+        if (modifier != null && !modifier.isBlank() && random.nextInt(100) < MODIFIER_CHANCE) {
+            core = core + " " + fillPlaceholders(modifier, player.getName(), locationName, killerName, biomeKey, armed);
+        }
+
+        return core;
     }
 
     private List<String> getTemplates(org.bukkit.configuration.ConfigurationSection root, String path) {

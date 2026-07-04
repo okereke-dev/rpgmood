@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -518,6 +519,33 @@ public class ZoneManager {
             ))
     );
 
+    /**
+     * Adjective/noun pools derived from BIOME_NAME_POOLS by splitting each two-word name on its
+     * first space (e.g. "Elden Meadows" -> "Elden" + "Meadows"). Combining them independently turns
+     * ~20 pre-written names per biome into up to size(adjectives) x size(nouns) unique combinations,
+     * without authoring new content. Single-word entries (no space) are kept as standalone nouns.
+     */
+    private static final Map<String, List<String>> BIOME_ADJECTIVES = new HashMap<>();
+    private static final Map<String, List<String>> BIOME_NOUNS = new HashMap<>();
+
+    static {
+        for (Map.Entry<String, List<String>> entry : BIOME_NAME_POOLS.entrySet()) {
+            List<String> adjectives = new ArrayList<>();
+            List<String> nouns = new ArrayList<>();
+            for (String name : entry.getValue()) {
+                int spaceIndex = name.indexOf(' ');
+                if (spaceIndex > 0) {
+                    adjectives.add(name.substring(0, spaceIndex));
+                    nouns.add(name.substring(spaceIndex + 1));
+                } else {
+                    nouns.add(name);
+                }
+            }
+            BIOME_ADJECTIVES.put(entry.getKey(), adjectives.isEmpty() ? List.of("Wandering") : adjectives);
+            BIOME_NOUNS.put(entry.getKey(), nouns);
+        }
+    }
+
     private static final Map<String, String> BIOME_SUBTITLES = Map.ofEntries(
             Map.entry("PLAINS", "Where the wind whispers secrets..."),
             Map.entry("FOREST", "The canopy hides old stories..."),
@@ -707,12 +735,25 @@ public class ZoneManager {
 
     private String createUniqueZoneName(Player player, String zoneName) {
         String biomeGroup = normalizeBiomeGroup(player.getLocation().getBlock().getBiome().name().toUpperCase(Locale.ROOT));
-        List<String> names = BIOME_NAME_POOLS.getOrDefault(biomeGroup, BIOME_NAME_POOLS.get("PLAINS"));
-        int index = Math.abs(zoneName.hashCode()) % names.size();
-        String baseName = names.get(index);
+        List<String> adjectives = BIOME_ADJECTIVES.getOrDefault(biomeGroup, BIOME_ADJECTIVES.get("PLAINS"));
+        List<String> nouns = BIOME_NOUNS.getOrDefault(biomeGroup, BIOME_NOUNS.get("PLAINS"));
 
+        int seed = Math.abs(zoneName.hashCode());
+        int totalCombinations = adjectives.size() * nouns.size();
+
+        for (int attempt = 0; attempt < totalCombinations; attempt++) {
+            int combinedIndex = (seed + attempt) % totalCombinations;
+            String candidate = adjectives.get(combinedIndex / nouns.size()) + " " + nouns.get(combinedIndex % nouns.size());
+            if (!assignedZoneNames.containsValue(candidate)) {
+                return candidate;
+            }
+        }
+
+        // Every adjective/noun combination for this biome is already in use somewhere on the server — fall
+        // back to a numeric suffix rather than looping forever.
+        String baseName = adjectives.get(seed % adjectives.size()) + " " + nouns.get(seed % nouns.size());
         String candidate = baseName;
-        int suffix = 1;
+        int suffix = 2;
         while (assignedZoneNames.containsValue(candidate)) {
             candidate = baseName + " " + suffix;
             suffix++;
