@@ -7,11 +7,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 public class ZoneManager {
@@ -19,12 +18,17 @@ public class ZoneManager {
     private static final int ZONE_SIZE = 256;
     private static final String DYNAMIC_ZONE_PREFIX = "DYNAMIC_ZONE";
     private static final String DEFAULT_SOUND = "ambient.weather.wind_light";
+    private static final int MAX_ASSIGNED_ZONE_NAMES = 2000;
 
     private final RPGMoodPlugin plugin;
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final Map<UUID, String> lastZones = new HashMap<>();
-    private final Map<String, String> assignedZoneNames = new HashMap<>();
-    private final Set<String> usedNames = new HashSet<>();
+    private final Map<String, String> assignedZoneNames = new LinkedHashMap<>(256, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > MAX_ASSIGNED_ZONE_NAMES;
+        }
+    };
 
     private static final Map<String, String> BIOME_GROUP = Map.ofEntries(
             Map.entry("SUNFLOWER_PLAINS", "PLAINS"),
@@ -593,6 +597,21 @@ public class ZoneManager {
         sendZoneFeedback(player, currentZone);
     }
 
+    /** Read-only lookup of the player's current zone display name (no cooldown/journal side effects). */
+    public String getCurrentZoneDisplayName(Player player) {
+        String currentZone = getCurrentZone(player);
+        if (currentZone == null) {
+            return "Unknown";
+        }
+
+        var section = plugin.getConfigManager().getZones().getConfigurationSection("zones." + currentZone);
+        if (section != null) {
+            String title = section.getString("title", currentZone);
+            return ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', title));
+        }
+        return getDynamicZoneTitle(player, currentZone);
+    }
+
     private String getCurrentZone(Player player) {
         String currentBiome = player.getLocation().getBlock().getBiome().name().toUpperCase(Locale.ROOT);
         String biomeGroup = normalizeBiomeGroup(currentBiome);
@@ -612,6 +631,9 @@ public class ZoneManager {
                 }
 
                 if ("BIOME".equalsIgnoreCase(type) && isBiomeMatch(id, currentBiome)) {
+                    return zoneName;
+                }
+                if ("WORLDGUARD".equalsIgnoreCase(type) && plugin.isInsideWorldGuardRegion(player.getLocation(), id)) {
                     return zoneName;
                 }
             }
@@ -659,6 +681,10 @@ public class ZoneManager {
         player.sendTitle(legacyTitle, legacySubtitle, 10, 40, 10);
         player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
 
+        if (!titleText.isBlank()) {
+            plugin.getPlayerJournalService().addEntry(player, "Arrived at " + legacyTitle + ChatColor.RESET + ".");
+        }
+
         Component finalFlavor = Component.text("[RPGMood] ")
                 .color(net.kyori.adventure.text.format.NamedTextColor.GRAY)
                 .append(LegacyComponentSerializer.legacyAmpersand().deserialize(flavorLine));
@@ -687,12 +713,18 @@ public class ZoneManager {
 
         String candidate = baseName;
         int suffix = 1;
-        while (usedNames.contains(candidate)) {
+        while (assignedZoneNames.containsValue(candidate)) {
             candidate = baseName + " " + suffix;
             suffix++;
         }
-        usedNames.add(candidate);
         return candidate;
+    }
+
+    /** Releases per-player tracking state; call on PlayerQuitEvent to avoid unbounded growth. */
+    public void handlePlayerQuit(Player player) {
+        UUID id = player.getUniqueId();
+        cooldowns.remove(id);
+        lastZones.remove(id);
     }
 
     private String getDynamicZoneSubtitle(Player player) {

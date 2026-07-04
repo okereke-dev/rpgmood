@@ -1,6 +1,5 @@
 package com.ricardo.rpgmood;
 
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -14,11 +13,23 @@ import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.StructureType;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class MobScalingService {
 
+    /** Grid cell size (blocks) used to cache structure-proximity lookups; structures don't move once generated. */
+    private static final int STRUCTURE_CACHE_GRID_SIZE = 128;
+    private static final int STRUCTURE_CACHE_MAX_ENTRIES = 4096;
+
     private final RPGMoodPlugin plugin;
+    private final Map<String, Integer> structureBonusCache = new LinkedHashMap<>(256, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, Integer> eldest) {
+            return size() > STRUCTURE_CACHE_MAX_ENTRIES;
+        }
+    };
 
     public MobScalingService(RPGMoodPlugin plugin) {
         this.plugin = plugin;
@@ -82,16 +93,20 @@ public class MobScalingService {
     }
 
     public int calculateLevel(LivingEntity entity) {
+        return calculateLevelAt(entity.getLocation(), getBaseLevel(entity.getType()));
+    }
+
+    /** Computes the scaling level a mob with the given base level would receive at this location right now. */
+    public int calculateLevelAt(Location location, int baseLevel) {
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("mob_scaling");
         if (section == null) {
             return 1;
         }
 
-        int baseLevel = getBaseLevel(entity.getType());
-        double distanceFromSpawn = entity.getLocation().distance(entity.getWorld().getSpawnLocation());
-        int biomeBonus = getBiomeBonus(entity.getLocation());
-        int structureBonus = getStructureBonus(entity.getLocation());
-        int nearbyPlayers = countNearbyPlayers(entity);
+        double distanceFromSpawn = location.distance(location.getWorld().getSpawnLocation());
+        int biomeBonus = getBiomeBonus(location);
+        int structureBonus = getStructureBonus(location);
+        int nearbyPlayers = countNearbyPlayers(location);
 
         return calculateDifficultyLevel(
                 baseLevel,
@@ -112,7 +127,7 @@ public class MobScalingService {
         return Math.max(1, Math.min(maxLevel, total));
     }
 
-    private int getBaseLevel(EntityType type) {
+    public int getBaseLevel(EntityType type) {
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("mob_scaling.base-levels");
         if (section == null) {
             return 1;
@@ -137,6 +152,21 @@ public class MobScalingService {
             return 0;
         }
 
+        int gridX = Math.floorDiv(location.getBlockX(), STRUCTURE_CACHE_GRID_SIZE);
+        int gridZ = Math.floorDiv(location.getBlockZ(), STRUCTURE_CACHE_GRID_SIZE);
+        String cacheKey = location.getWorld().getName() + "|" + gridX + "|" + gridZ;
+
+        Integer cached = structureBonusCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
+        int bonus = scanStructureBonus(location, section);
+        structureBonusCache.put(cacheKey, bonus);
+        return bonus;
+    }
+
+    private int scanStructureBonus(Location location, ConfigurationSection section) {
         for (String key : section.getKeys(false)) {
             if (key == null || key.isBlank()) {
                 continue;
@@ -159,10 +189,10 @@ public class MobScalingService {
         return 0;
     }
 
-    private int countNearbyPlayers(LivingEntity entity) {
+    private int countNearbyPlayers(Location location) {
         int count = 0;
-        for (Player player : entity.getWorld().getPlayers()) {
-            if (player.getLocation().distanceSquared(entity.getLocation()) <= 900.0) {
+        for (Player player : location.getWorld().getPlayers()) {
+            if (player.getLocation().distanceSquared(location) <= 900.0) {
                 count++;
             }
         }

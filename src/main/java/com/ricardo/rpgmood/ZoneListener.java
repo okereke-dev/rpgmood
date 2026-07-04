@@ -3,6 +3,7 @@ package com.ricardo.rpgmood;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 public class ZoneListener implements Listener {
 
@@ -20,5 +21,10 @@ public class ZoneListener implements Listener {
             return;
         }
         plugin.getZoneManager().handlePlayerZone(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        plugin.getZoneManager().handlePlayerQuit(event.getPlayer());
     }
 }

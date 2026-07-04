@@ -52,7 +52,9 @@ public class AmbientTask extends BukkitRunnable {
             }
 
             int triggerTime = eventSection.getInt("time", 0);
-            if (Math.abs(worldTime - triggerTime) <= 100) {
+            long diff = Math.abs(worldTime - triggerTime);
+            long circularDiff = Math.min(diff, 24000L - diff);
+            if (circularDiff <= 100) {
                 Long last = lastTriggeredEvents.get(eventKey);
                 if (last != null && now - last < 600000L) {
                     continue;
@@ -125,20 +127,5 @@ public class AmbientTask extends BukkitRunnable {
         }
 
         lastWeatherType.put(worldKey, currentWeather);
-    }
-
-    private String capitalize(String value) {
-        String[] parts = value.split(" ");
-        StringBuilder builder = new StringBuilder();
-        for (String part : parts) {
-            if (part.isBlank()) {
-                continue;
-            }
-            if (builder.length() > 0) {
-                builder.append(' ');
-            }
-            builder.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
-        }
-        return builder.toString();
     }
 }

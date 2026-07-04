@@ -7,17 +7,22 @@ softdepend: [PlaceholderAPI, WorldGuard]
 commands:
   rpgmood:
     description: Main RPGMood commands
-    usage: /rpgmood <reload|toggle>
-    permission: rpgmood.admin
+    usage: /rpgmood <reload|toggle|info>
   diary:
     description: Opens the player's adventure journal
     usage: /diary
     aliases: [diario]
     permission: rpgmood.player.diary
+  emote:
+    description: Plays a short ambient emote effect
+    usage: /emote
+    permission: rpgmood.player.emotes
 permissions:
   rpgmood.admin:
     default: op
   rpgmood.player.diary:
     default: true
   rpgmood.player.toggle:
+    default: true
+  rpgmood.player.emotes:
     default: true

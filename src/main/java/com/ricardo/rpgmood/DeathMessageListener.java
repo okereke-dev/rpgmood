@@ -72,7 +72,9 @@ public class DeathMessageListener implements Listener {
 
         String selectedMessage = selectMessage(causeKey, biomeKey, killerKey, player.getName(), locationName, armed);
         if (selectedMessage != null && !selectedMessage.isBlank()) {
-            event.setDeathMessage(ChatColor.translateAlternateColorCodes('&', selectedMessage));
+            String translated = ChatColor.translateAlternateColorCodes('&', selectedMessage);
+            event.setDeathMessage(translated);
+            plugin.getPlayerJournalService().addEntry(player, translated);
         } else {
             event.setDeathMessage("");
         }
@@ -232,33 +234,6 @@ public class DeathMessageListener implements Listener {
             return null;
         }
         return templates.get(random.nextInt(templates.size()));
-    }
-
-    private String pickRandomNonNull(String... phrases) {
-        java.util.List<String> valid = new java.util.ArrayList<>();
-        for (String phrase : phrases) {
-            if (phrase != null && !phrase.isBlank()) {
-                valid.add(phrase);
-            }
-        }
-        if (valid.isEmpty()) {
-            return null;
-        }
-        return valid.get(random.nextInt(valid.size()));
-    }
-
-    private void appendPhrase(StringBuilder message, String phrase, String playerName, String locationName, String killerName, String biomeKey, boolean armed) {
-        if (phrase == null || phrase.isBlank()) {
-            return;
-        }
-        String filled = fillPlaceholders(phrase, playerName, locationName, killerName, biomeKey, armed);
-        if (filled.isBlank()) {
-            return;
-        }
-        if (!message.toString().endsWith(" ")) {
-            message.append(' ');
-        }
-        message.append(filled);
     }
 
     private String fillPlaceholders(String template, String playerName, String locationName, String killerName, String biomeKey, boolean armed) {
