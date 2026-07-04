@@ -7,7 +7,7 @@ softdepend: [PlaceholderAPI, WorldGuard]
 commands:
   rpgmood:
     description: Main RPGMood commands
-    usage: /rpgmood <reload|toggle|info|leaderboard [deaths|zones|level]>
+    usage: /rpgmood <reload|toggle [titles]|info|leaderboard [deaths|zones|level]>
   diary:
     description: Opens the player's adventure journal
     usage: /diary

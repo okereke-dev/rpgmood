@@ -22,9 +22,20 @@ public class ZoneManager {
     private static final String DEFAULT_SOUND = "ambient.weather.wind_light";
     private static final int MAX_ASSIGNED_ZONE_NAMES = 2000;
 
+    /** How long a player must stay in a new zone before feedback fires — filters out border pacing and fast pass-throughs. */
+    private static final long NORMAL_DWELL_MILLIS = 1500L;
+    /** Longer dwell time while gliding/riding a vehicle, where fast traversal makes brief zone crossings even more likely. */
+    private static final long FAST_DWELL_MILLIS = 3000L;
+    /** Minimum time between showing the big Title/Subtitle for the *same* zone again, independent of the ambient cooldown. */
+    private static final long TITLE_SUPPRESS_MILLIS = 5 * 60 * 1000L;
+    private static final int MAX_RECENT_TITLE_ZONES_PER_PLAYER = 20;
+
     private final RPGMoodPlugin plugin;
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final Map<UUID, String> lastZones = new HashMap<>();
+    private final Map<UUID, String> pendingZones = new HashMap<>();
+    private final Map<UUID, org.bukkit.scheduler.BukkitTask> pendingTasks = new HashMap<>();
+    private final Map<UUID, LinkedHashMap<String, Long>> recentTitleShownAt = new HashMap<>();
     private final Map<String, String> assignedZoneNames = new LinkedHashMap<>(256, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
@@ -608,10 +619,57 @@ public class ZoneManager {
 
         if (currentZone == null) {
             lastZones.remove(id);
+            cancelPending(id);
             return;
         }
 
         if (currentZone.equals(previousZone)) {
+            cancelPending(id);
+            return;
+        }
+
+        if (currentZone.equals(pendingZones.get(id))) {
+            return;
+        }
+
+        cancelPending(id);
+        pendingZones.put(id, currentZone);
+
+        long dwellMillis = isFastMoving(player) ? FAST_DWELL_MILLIS : NORMAL_DWELL_MILLIS;
+        org.bukkit.scheduler.BukkitTask task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                pendingTasks.remove(id);
+                String pending = pendingZones.remove(id);
+                if (pending == null || !player.isOnline()) {
+                    return;
+                }
+                if (!pending.equals(getCurrentZone(player))) {
+                    return;
+                }
+                confirmZoneChange(player, pending);
+            }
+        }.runTaskLater(plugin, dwellMillis / 50L);
+        pendingTasks.put(id, task);
+    }
+
+    private void cancelPending(UUID id) {
+        org.bukkit.scheduler.BukkitTask task = pendingTasks.remove(id);
+        if (task != null) {
+            task.cancel();
+        }
+        pendingZones.remove(id);
+    }
+
+    private boolean isFastMoving(Player player) {
+        return player.isGliding() || player.getVehicle() != null;
+    }
+
+    private void confirmZoneChange(Player player, String currentZone) {
+        UUID id = player.getUniqueId();
+
+        if (!plugin.getConfigManager().getConfigValues().getBoolean("player_effects." + id, true)) {
+            lastZones.put(id, currentZone);
             return;
         }
 
@@ -624,7 +682,31 @@ public class ZoneManager {
         cooldowns.put(id, now);
         lastZones.put(id, currentZone);
         plugin.getPlayerStatsService().recordZoneChange(player);
-        sendZoneFeedback(player, currentZone);
+
+        boolean showTitle = shouldShowTitle(player, currentZone, now);
+        sendZoneFeedback(player, currentZone, showTitle);
+    }
+
+    /** Gates the big Title/Subtitle behind its own per-player opt-out and a longer "seen recently" memory than the ambient cooldown. */
+    private boolean shouldShowTitle(Player player, String zoneName, long now) {
+        UUID id = player.getUniqueId();
+        if (!plugin.getConfigManager().getConfigValues().getBoolean("player_titles." + id, true)) {
+            return false;
+        }
+
+        LinkedHashMap<String, Long> recent = recentTitleShownAt.computeIfAbsent(id, k -> new LinkedHashMap<>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, Long> eldest) {
+                return size() > MAX_RECENT_TITLE_ZONES_PER_PLAYER;
+            }
+        });
+
+        Long last = recent.get(zoneName);
+        boolean show = last == null || (now - last) >= TITLE_SUPPRESS_MILLIS;
+        if (show) {
+            recent.put(zoneName, now);
+        }
+        return show;
     }
 
     /** Read-only lookup of the player's current zone display name (no cooldown/journal side effects). */
@@ -696,7 +778,7 @@ public class ZoneManager {
         return normalizedConfigured.contains(normalizedCurrent) || normalizedCurrent.contains(normalizedConfigured);
     }
 
-    private void sendZoneFeedback(Player player, String zoneName) {
+    private void sendZoneFeedback(Player player, String zoneName, boolean showTitle) {
         var section = plugin.getConfigManager().getZones().getConfigurationSection("zones." + zoneName);
         String titleText;
         String subtitleText;
@@ -720,7 +802,14 @@ public class ZoneManager {
 
         String legacyTitle = ChatColor.translateAlternateColorCodes('&', titleText);
         String legacySubtitle = ChatColor.translateAlternateColorCodes('&', subtitleText);
-        player.sendTitle(legacyTitle, legacySubtitle, 10, 40, 10);
+
+        if (showTitle && !titleText.isBlank()) {
+            if (isFastMoving(player)) {
+                player.sendTitle(legacyTitle, legacySubtitle, 5, 20, 5);
+            } else {
+                player.sendTitle(legacyTitle, legacySubtitle, 10, 40, 10);
+            }
+        }
         player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
 
         if (section != null) {
@@ -784,6 +873,8 @@ public class ZoneManager {
         UUID id = player.getUniqueId();
         cooldowns.remove(id);
         lastZones.remove(id);
+        recentTitleShownAt.remove(id);
+        cancelPending(id);
     }
 
     private String getDynamicZoneSubtitle(Player player) {

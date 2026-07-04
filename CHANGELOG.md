@@ -10,6 +10,10 @@
 - **Zone particles** — the `particles` field in `zones.yml` (previously unused) now actually spawns particles on zone entry
 - **PvP death messages** — a player killed by another player now gets a `killers.player` message naming the actual killer, instead of falling back to generic wilderness flavor text
 - Per-biome location name descriptors (plains, dark_forest, desert, taiga, snowy_taiga, jungle, swamp, ocean, nether_wastes) in addition to the shared `default` pool
+- **Zone title hysteresis** — a zone change now needs a short dwell time (1.5s on foot, 3s while gliding/riding a vehicle) before feedback fires, eliminating title spam from border pacing and fast pass-throughs on horseback, boat, minecart, or elytra
+- **Tiered zone feedback** — the big Title/Subtitle now has its own 5-minute "seen recently" memory per zone (separate from the ambient sound/chat cooldown) and a shorter duration while moving fast, so it doesn't linger over your view
+- `/rpgmood toggle titles` — opt out of just the Title/Subtitle overlay while keeping sound and chat flavor
+- Fixed: `/rpgmood toggle` (master) is now actually respected by zone feedback — previously it only affected time/weather ambient messages
 
 ### Removed
 - **Emotes** (`/emote`) — removed entirely rather than kept as a single generic, unfinished effect

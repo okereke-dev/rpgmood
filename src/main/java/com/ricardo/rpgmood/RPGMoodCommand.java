@@ -20,7 +20,7 @@ public class RPGMoodCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle|info|leaderboard").color(NamedTextColor.RED));
+            sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle [titles]|info|leaderboard").color(NamedTextColor.RED));
             return true;
         }
 
@@ -51,14 +51,16 @@ public class RPGMoodCommand implements CommandExecutor {
                 sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(plugin.getConfig().getString("messages.no_permission", "&cNo permission")));
                 return true;
             }
-            boolean enabled = !plugin.getConfigManager().getConfigValues().getBoolean("player_effects." + player.getUniqueId(), true);
-            plugin.getConfig().set("player_effects." + player.getUniqueId(), enabled);
+
+            String configKey = args.length > 1 && args[1].equalsIgnoreCase("titles") ? "player_titles." : "player_effects.";
+            boolean enabled = !plugin.getConfigManager().getConfigValues().getBoolean(configKey + player.getUniqueId(), true);
+            plugin.getConfig().set(configKey + player.getUniqueId(), enabled);
             plugin.saveConfig();
             player.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(enabled ? plugin.getConfig().getString("messages.toggle_enabled", "&aEnabled") : plugin.getConfig().getString("messages.toggle_disabled", "&eDisabled")));
             return true;
         }
 
-        sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle|info|leaderboard").color(NamedTextColor.RED));
+        sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle [titles]|info|leaderboard").color(NamedTextColor.RED));
         return true;
     }
 
