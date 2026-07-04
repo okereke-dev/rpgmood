@@ -18,6 +18,10 @@ An ambient RPG plugin for Spigot/Paper servers. Scales hostile mobs by distance,
 
 **Requires:** Paper/Spigot 1.20+ · Java 21+
 
+## Documentation
+
+→ **[Wiki](../../wiki)**
+
 ## Configuration
 
 See `config.yml`, `triggers.yml`, and `zones.yml` in `src/main/resources` for mob scaling, death message, and zone settings.
