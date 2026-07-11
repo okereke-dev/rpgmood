@@ -25,31 +25,35 @@ public class DeathMessageListener implements Listener {
     private final RPGMoodPlugin plugin;
     private final Random random = new Random();
     private final Map<UUID, String> lastTemplates = new HashMap<>();
+    /** Maps Minecraft biome names to their death-message category key, aligned with ZoneManager.BIOME_GROUP. */
     private static final Map<String, String> BIOME_ALIAS = Map.ofEntries(
             Map.entry("sunflower_plains", "plains"),
             Map.entry("meadow", "plains"),
             Map.entry("flower_forest", "plains"),
-            Map.entry("forest", "dark_forest"),
-            Map.entry("birch_forest", "dark_forest"),
-            Map.entry("old_growth_birch_forest", "dark_forest"),
+            Map.entry("forest", "forest"),
+            Map.entry("birch_forest", "forest"),
+            Map.entry("old_growth_birch_forest", "forest"),
             Map.entry("old_growth_pine_taiga", "snowy_taiga"),
             Map.entry("old_growth_spruce_taiga", "snowy_taiga"),
             Map.entry("giant_tree_taiga", "taiga"),
             Map.entry("giant_spruce_taiga", "taiga"),
             Map.entry("ice_spikes", "snowy_taiga"),
-            Map.entry("snowy_plains", "snowy_plains"),
+            Map.entry("snowy_plains", "snowy_taiga"),
             Map.entry("snowy_mountains", "mountains"),
             Map.entry("frozen_peaks", "mountains"),
             Map.entry("jagged_peaks", "mountains"),
             Map.entry("grove", "dark_forest"),
             Map.entry("bamboo_jungle", "jungle"),
-            Map.entry("mangrove_swamp", "mangrove_swamp"),
+            Map.entry("mangrove_swamp", "swamp"),
             Map.entry("crimson_forest", "crimson_forest"),
             Map.entry("warped_forest", "warped_forest"),
             Map.entry("basalt_deltas", "basalt_deltas"),
             Map.entry("soul_sand_valley", "soul_sand_valley"),
             Map.entry("nether_wastes", "nether_wastes"),
             Map.entry("beach", "beach"),
+            Map.entry("stone_shore", "beach"),
+            Map.entry("warm_beach", "beach"),
+            Map.entry("snowy_beach", "beach"),
             Map.entry("river", "river"),
             Map.entry("frozen_river", "river"),
             Map.entry("ocean", "ocean"),
@@ -57,7 +61,14 @@ public class DeathMessageListener implements Listener {
             Map.entry("warm_ocean", "ocean"),
             Map.entry("deep_ocean", "ocean"),
             Map.entry("cold_ocean", "ocean"),
-            Map.entry("frozen_ocean", "ocean")
+            Map.entry("frozen_ocean", "ocean"),
+            Map.entry("mushroom_fields", "mushroom"),
+            Map.entry("mushroom_field_shore", "mushroom"),
+            Map.entry("the_end", "end"),
+            Map.entry("end_midlands", "end"),
+            Map.entry("end_highlands", "end"),
+            Map.entry("end_barrens", "end"),
+            Map.entry("small_end_islands", "end")
     );
 
     public DeathMessageListener(RPGMoodPlugin plugin) {
@@ -211,25 +222,50 @@ public class DeathMessageListener implements Listener {
         return false;
     }
 
+    /**
+     * Selects a death message using a priority system: killers > causes > biome > armed > fallback.
+     * This ensures the message is thematically relevant rather than a random mix of categories.
+     */
     private String selectMessage(String causeKey, String biomeKey, String killerKey, Entity killerEntity, Player player, String locationName, boolean armed) {
         var root = plugin.getConfig().getConfigurationSection("death_messages");
         if (root == null) {
             return null;
         }
 
-        List<String> templates = new java.util.ArrayList<>();
-        templates.addAll(getTemplates(root, "causes." + causeKey));
-        templates.addAll(getTemplates(root, "biomes." + biomeKey));
+        // Priority: killer-specific > cause-specific > biome-specific > armed-state > fallback
+        List<String> templates;
         if (!"none".equals(killerKey)) {
-            templates.addAll(getTemplates(root, "killers." + killerKey));
-        }
-        templates.addAll(getTemplates(root, "armed." + armed));
-        templates.addAll(getTemplates(root, "fallback"));
-
-        if (templates.isEmpty()) {
-            return null;
+            templates = getTemplates(root, "killers." + killerKey);
+            if (!templates.isEmpty()) {
+                return buildFinalMessage(player, locationName, killerKey, killerEntity, biomeKey, armed, templates, root);
+            }
         }
 
+        templates = getTemplates(root, "causes." + causeKey);
+        if (!templates.isEmpty()) {
+            return buildFinalMessage(player, locationName, killerKey, killerEntity, biomeKey, armed, templates, root);
+        }
+
+        templates = getTemplates(root, "biomes." + biomeKey);
+        if (!templates.isEmpty()) {
+            return buildFinalMessage(player, locationName, killerKey, killerEntity, biomeKey, armed, templates, root);
+        }
+
+        templates = getTemplates(root, "armed." + armed);
+        if (!templates.isEmpty()) {
+            return buildFinalMessage(player, locationName, killerKey, killerEntity, biomeKey, armed, templates, root);
+        }
+
+        templates = getTemplates(root, "fallback");
+        if (!templates.isEmpty()) {
+            return buildFinalMessage(player, locationName, killerKey, killerEntity, biomeKey, armed, templates, root);
+        }
+
+        return null;
+    }
+
+    /** Picks from the template list, avoids immediate repeats, fills placeholders and optionally appends a modifier flourish. */
+    private String buildFinalMessage(Player player, String locationName, String killerKey, Entity killerEntity, String biomeKey, boolean armed, List<String> templates, org.bukkit.configuration.ConfigurationSection root) {
         UUID id = player.getUniqueId();
         String chosen = templates.get(random.nextInt(templates.size()));
         if (templates.size() > 1 && chosen.equals(lastTemplates.get(id))) {

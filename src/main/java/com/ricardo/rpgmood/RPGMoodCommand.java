@@ -38,6 +38,7 @@ public class RPGMoodCommand implements CommandExecutor {
                 return true;
             }
             plugin.getConfigManager().reload();
+            plugin.getMobScalingService().invalidateStructureCache();
             sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(plugin.getConfig().getString("messages.plugin_reloaded", "&aReloaded")));
             return true;
         }
@@ -55,7 +56,8 @@ public class RPGMoodCommand implements CommandExecutor {
             String configKey = args.length > 1 && args[1].equalsIgnoreCase("titles") ? "player_titles." : "player_effects.";
             boolean enabled = !plugin.getConfigManager().getConfigValues().getBoolean(configKey + player.getUniqueId(), true);
             plugin.getConfig().set(configKey + player.getUniqueId(), enabled);
-            plugin.saveConfig();
+            // Save only the specific player toggle, not the entire config
+            plugin.getConfigManager().savePlayerToggle(configKey, player.getUniqueId(), enabled);
             player.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(enabled ? plugin.getConfig().getString("messages.toggle_enabled", "&aEnabled") : plugin.getConfig().getString("messages.toggle_disabled", "&eDisabled")));
             return true;
         }

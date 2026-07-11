@@ -87,6 +87,10 @@ death_messages:
     drowning:
       - "&6{player} learned that water is not a safe shortcut."
   biomes:
+    forest:
+      - "&8The forest watched {player} fall among the trees."
+      - "&8Leaves whispered as {player} took their last breath."
+      - "&8The woodland swallowed {player} without a trace."
     plains:
       - "&8The plains watched {player} fall."
       - "&8The wind sighed as {player} disappeared from view."
@@ -95,6 +99,12 @@ death_messages:
       - "&8The dark forest kept its secrets, and {player} paid the price."
       - "&8Shadows moved in a way that {player} should not have ignored."
       - "&8{player} became another whisper among the trees."
+    mushroom:
+      - "&8{player} fell among the glowing caps."
+      - "&8The fungal realm claimed {player}."
+    end:
+      - "&8{player} drifted into the void between stars."
+      - "&8The End took {player} into its silent embrace."
     desert:
       - "&8The desert sun finished what the sand began for {player}."
       - "&8One more lost traveler collapsed in the heat."
@@ -338,6 +348,24 @@ death_messages:
       - "scorched"
       - "smoldering"
       - "ember-lit"
+    forest:
+      - "leaf-strewn"
+      - "canopy-shrouded"
+      - "root-bound"
+      - "dappled"
+      - "whisper-filled"
+    mushroom:
+      - "glowing"
+      - "spore-lit"
+      - "fungal"
+      - "luminous"
+      - "mycelium-woven"
+    end:
+      - "void-touched"
+      - "star-blighted"
+      - "ethereal"
+      - "drift-worn"
+      - "astral"
   location_names:
     plains:
       - "Elden Meadows"
@@ -360,6 +388,17 @@ death_messages:
       - "Brightmere Expanse"
       - "The Goldenmist Grasslands"
       - "Serpentbloom Flats"
+    forest:
+      - "Silverwood Grove"
+      - "Fernshade Woods"
+      - "The Canopy Glade"
+      - "Sunleaf Thicket"
+      - "Oakheart Vale"
+      - "Mossglen Copse"
+      - "Greenhollow Stand"
+      - "Driftwood Pines"
+      - "Willowmere Forest"
+      - "Autumnspire Wood"
     dark_forest:
       - "Black Grove"
       - "Whispering Woods"
@@ -717,3 +756,25 @@ death_messages:
       - "The Riftstone Maw"
       - "The Darkweld Basin"
       - "The Thunderpillar Deltas"
+    mushroom:
+      - "Glowcap Fields"
+      - "The Mycelial Expanse"
+      - "Sporelight Vale"
+      - "Fungal Bloom Hollow"
+      - "Capstone Rise"
+      - "Luminous Dell"
+      - "The Mushroom Knoll"
+      - "Velvetcap Thicket"
+      - "Sporeglade Fen"
+      - "Mooncap Grove"
+    end:
+      - "The Starfall Expanse"
+      - "Voidglow Isles"
+      - "Eternal Reach"
+      - "Aether Spire"
+      - "The Silent Plain"
+      - "Echoing Drift"
+      - "Galexis Vale"
+      - "Astral Hollow"
+      - "The Luminous Rift"
+      - "Nebulight Crest"

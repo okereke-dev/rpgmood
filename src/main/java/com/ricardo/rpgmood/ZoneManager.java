@@ -774,8 +774,10 @@ public class ZoneManager {
         if (normalizedConfigured.equals(currentBiome)) {
             return true;
         }
-        String normalizedCurrent = currentBiome.replace(' ', '_');
-        return normalizedConfigured.contains(normalizedCurrent) || normalizedCurrent.contains(normalizedConfigured);
+        // Check for underscore-delimited token matches to avoid false positives (e.g. "FOR" matching "FOREST")
+        String configuredToken = "_" + normalizedConfigured + "_";
+        String biomeToken = "_" + currentBiome + "_";
+        return configuredToken.contains(biomeToken) || biomeToken.contains(configuredToken);
     }
 
     private void sendZoneFeedback(Player player, String zoneName, boolean showTitle) {
@@ -889,7 +891,7 @@ public class ZoneManager {
         return flavorTexts.get(index);
     }
 
-    private String normalizeBiomeGroup(String biomeKey) {
+    public static String normalizeBiomeGroup(String biomeKey) {
         return BIOME_GROUP.getOrDefault(biomeKey, biomeKey);
     }
 }

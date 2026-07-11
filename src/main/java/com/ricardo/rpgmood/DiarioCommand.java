@@ -14,11 +14,12 @@ import org.bukkit.inventory.meta.BookMeta;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DiarioCommand implements CommandExecutor {
 
-    private static final int ENTRIES_PER_PAGE = 5;
+    private static final int MAX_PAGE_LENGTH = 245; // Safely under Minecraft's 256-char page limit
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("MMM d, HH:mm").withZone(ZoneId.systemDefault());
 
     private final RPGMoodPlugin plugin;
@@ -47,23 +48,47 @@ public class DiarioCommand implements CommandExecutor {
         if (entries.isEmpty()) {
             meta.addPage("Day 1: Your journey begins.\n\nYour first adventure has been recorded.");
         } else {
-            for (int i = 0; i < entries.size(); i += ENTRIES_PER_PAGE) {
-                StringBuilder page = new StringBuilder();
-                int end = Math.min(i + ENTRIES_PER_PAGE, entries.size());
-                for (int j = i; j < end; j++) {
-                    PlayerJournalService.Entry entry = entries.get(j);
-                    String timestamp = TIMESTAMP_FORMAT.format(Instant.ofEpochMilli(entry.timeMillis()));
-                    page.append(timestamp).append(" - ").append(entry.text());
-                    if (j < end - 1) {
-                        page.append("\n\n");
-                    }
-                }
-                meta.addPage(page.toString());
+            for (String page : buildPages(entries)) {
+                meta.addPage(page);
             }
         }
 
         book.setItemMeta(meta);
         player.openBook(book);
         return true;
+    }
+
+    /** Builds book pages respecting Minecraft's character limit, splitting entries across pages as needed. */
+    private List<String> buildPages(List<PlayerJournalService.Entry> entries) {
+        List<String> pages = new ArrayList<>();
+        StringBuilder currentPage = new StringBuilder();
+
+        for (int i = entries.size() - 1; i >= 0; i--) {
+            PlayerJournalService.Entry entry = entries.get(i);
+            String timestamp = TIMESTAMP_FORMAT.format(Instant.ofEpochMilli(entry.timeMillis()));
+            String line = timestamp + " - " + entry.text();
+
+            // If the line itself is too long for a single page, truncate it
+            String truncated = line.length() > MAX_PAGE_LENGTH
+                    ? line.substring(0, MAX_PAGE_LENGTH - 3) + "..."
+                    : line;
+
+            // If adding this line would exceed the page limit, start a new page
+            if (!currentPage.isEmpty() && currentPage.length() + truncated.length() + 2 > MAX_PAGE_LENGTH) {
+                pages.add(currentPage.toString());
+                currentPage = new StringBuilder();
+            }
+
+            if (!currentPage.isEmpty()) {
+                currentPage.append("\n\n");
+            }
+            currentPage.append(truncated);
+        }
+
+        if (!currentPage.isEmpty()) {
+            pages.add(currentPage.toString());
+        }
+
+        return pages;
     }
 }

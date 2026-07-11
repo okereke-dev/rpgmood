@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.1.1] — 2026-07-11
+
+### Fixed
+- **Biome bonuses for variant biomes** (`MobScalingService.getBiomeBonus()`) — biomes like MEADOW, SUNFLOWER_PLAINS, BAMBOO_JUNGLE now correctly inherit bonuses from their parent biome group (PLAINS, FOREST, JUNGLE, etc.) instead of always returning 0
+- **Structure scan lag** (`MobScalingService.scanStructureBonus()`) — increased grid cache granularity from 128→512 blocks and added chunk-generation pre-checks to avoid expensive `locateNearestStructure()` calls in ungenerated areas; structure cache is now invalidated on `/rpgmood reload`
+- **Zone fuzzy matching** (`ZoneManager.isBiomeMatch()`) — tightened pattern matching with underscore-delimited tokens to prevent false-positive matches (e.g. "FOR" no longer matches "FOREST")
+- **Diary page overflow** (`DiarioCommand`) — replaced fixed-entry-per-page layout with dynamic character-aware page splitting to respect Minecraft's 256-char book page limit
+- **Excessive disk I/O** (`PlayerStatsService`) — stat saves are now debounced (5s window), coalescing multiple rapid changes into a single write
+- **Memory leaks** (`AmbientTask`) — added periodic eviction (every 5 min) of stale entries from `lastTriggeredEvents` and `lastWeatherType` maps
+- **Biome alias mismatch** (`DeathMessageListener`) — aligned `BIOME_ALIAS` with `ZoneManager.BIOME_GROUP` so forest, mushroom, and end biomes map consistently across both systems
+- **Non-contextual death messages** (`DeathMessageListener.selectMessage()`) — replaced random-category mixing with priority-based selection: killer > cause > biome > armed > fallback; each message is now thematically relevant
+- **Config toggle efficiency** (`RPGMoodCommand`) — `/rpgmood toggle` now persists only the player's toggle value instead of rewriting the entire `config.yml`
+
+### Added
+- `MobScalingService.invalidateStructureCache()` — public method for cache invalidation
+- `ConfigManager.savePlayerToggle()` — targeted persistence for player preference toggles
+- New biome sections in `config.yml` (`forest`, `mushroom`, `end`) with location names, descriptors, and flavour text for complete biome coverage
+
 ## [1.1.0] — 2026-07-04
 
 ### Added

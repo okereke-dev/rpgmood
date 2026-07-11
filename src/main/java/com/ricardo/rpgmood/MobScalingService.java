@@ -14,14 +14,16 @@ import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 public class MobScalingService {
 
-    /** Grid cell size (blocks) used to cache structure-proximity lookups; structures don't move once generated. */
-    private static final int STRUCTURE_CACHE_GRID_SIZE = 128;
+    /** Grid cell size (blocks) used to cache structure-proximity lookups; larger values reduce scan frequency at the cost of coarser granularity. */
+    private static final int STRUCTURE_CACHE_GRID_SIZE = 512;
     private static final int STRUCTURE_CACHE_MAX_ENTRIES = 4096;
 
     /**
@@ -38,6 +40,54 @@ public class MobScalingService {
             return size() > STRUCTURE_CACHE_MAX_ENTRIES;
         }
     };
+
+    /** Maps variant/child biome names to their parent biome group for bonus lookups (mirrors ZoneManager's grouping). */
+    private static final Map<String, String> BIOME_NORMALIZATION = new HashMap<>();
+
+    static {
+        BIOME_NORMALIZATION.put("SUNFLOWER_PLAINS", "PLAINS");
+        BIOME_NORMALIZATION.put("MEADOW", "PLAINS");
+        BIOME_NORMALIZATION.put("FLOWER_FOREST", "FOREST");
+        BIOME_NORMALIZATION.put("FOREST", "FOREST");
+        BIOME_NORMALIZATION.put("BIRCH_FOREST", "FOREST");
+        BIOME_NORMALIZATION.put("OLD_GROWTH_BIRCH_FOREST", "FOREST");
+        BIOME_NORMALIZATION.put("OLD_GROWTH_PINE_TAIGA", "SNOWY_TAIGA");
+        BIOME_NORMALIZATION.put("OLD_GROWTH_SPRUCE_TAIGA", "SNOWY_TAIGA");
+        BIOME_NORMALIZATION.put("GIANT_TREE_TAIGA", "TAIGA");
+        BIOME_NORMALIZATION.put("GIANT_SPRUCE_TAIGA", "TAIGA");
+        BIOME_NORMALIZATION.put("ICE_SPIKES", "SNOWY_TAIGA");
+        BIOME_NORMALIZATION.put("SNOWY_PLAINS", "SNOWY_TAIGA");
+        BIOME_NORMALIZATION.put("SNOWY_MOUNTAINS", "MOUNTAINS");
+        BIOME_NORMALIZATION.put("FROZEN_PEAKS", "MOUNTAINS");
+        BIOME_NORMALIZATION.put("JAGGED_PEAKS", "MOUNTAINS");
+        BIOME_NORMALIZATION.put("GROVE", "DARK_FOREST");
+        BIOME_NORMALIZATION.put("BAMBOO_JUNGLE", "JUNGLE");
+        BIOME_NORMALIZATION.put("MANGROVE_SWAMP", "SWAMP");
+        BIOME_NORMALIZATION.put("CRIMSON_FOREST", "NETHER_CRIMSON");
+        BIOME_NORMALIZATION.put("WARPED_FOREST", "NETHER_WARPED");
+        BIOME_NORMALIZATION.put("BASALT_DELTAS", "NETHER_BASALT");
+        BIOME_NORMALIZATION.put("SOUL_SAND_VALLEY", "NETHER_SOUL");
+        BIOME_NORMALIZATION.put("NETHER_WASTES", "NETHER_WASTES");
+        BIOME_NORMALIZATION.put("OCEAN", "OCEAN");
+        BIOME_NORMALIZATION.put("LUKEWARM_OCEAN", "OCEAN");
+        BIOME_NORMALIZATION.put("WARM_OCEAN", "OCEAN");
+        BIOME_NORMALIZATION.put("DEEP_OCEAN", "OCEAN");
+        BIOME_NORMALIZATION.put("COLD_OCEAN", "OCEAN");
+        BIOME_NORMALIZATION.put("FROZEN_OCEAN", "OCEAN");
+        BIOME_NORMALIZATION.put("RIVER", "RIVER");
+        BIOME_NORMALIZATION.put("FROZEN_RIVER", "RIVER");
+        BIOME_NORMALIZATION.put("BEACH", "BEACH");
+        BIOME_NORMALIZATION.put("STONE_SHORE", "BEACH");
+        BIOME_NORMALIZATION.put("WARM_BEACH", "BEACH");
+        BIOME_NORMALIZATION.put("SNOWY_BEACH", "BEACH");
+        BIOME_NORMALIZATION.put("MUSHROOM_FIELDS", "MUSHROOM");
+        BIOME_NORMALIZATION.put("MUSHROOM_FIELD_SHORE", "MUSHROOM");
+        BIOME_NORMALIZATION.put("THE_END", "END");
+        BIOME_NORMALIZATION.put("END_MIDLANDS", "END");
+        BIOME_NORMALIZATION.put("END_HIGHLANDS", "END");
+        BIOME_NORMALIZATION.put("END_BARRENS", "END");
+        BIOME_NORMALIZATION.put("SMALL_END_ISLANDS", "END");
+    }
 
     public MobScalingService(RPGMoodPlugin plugin) {
         this.plugin = plugin;
@@ -108,6 +158,11 @@ public class MobScalingService {
         return level;
     }
 
+    /** Clears the structure-bonus cache so it is rebuilt on the next lookup. Call after a config reload. */
+    public void invalidateStructureCache() {
+        structureBonusCache.clear();
+    }
+
     public int calculateLevel(LivingEntity entity) {
         return calculateLevelAt(entity.getLocation(), getBaseLevel(entity.getType()));
     }
@@ -159,12 +214,18 @@ public class MobScalingService {
             return 0;
         }
 
-        return section.getInt(location.getBlock().getBiome().name(), 0);
+        String rawBiome = location.getBlock().getBiome().name();
+        String normalized = BIOME_NORMALIZATION.getOrDefault(rawBiome, rawBiome);
+        return section.getInt(normalized, 0);
     }
 
     private int getStructureBonus(Location location) {
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("mob_scaling.structure-bonuses");
         if (section == null) {
+            return 0;
+        }
+
+        if (!location.getWorld().isChunkGenerated(location.getBlockX() >> 4, location.getBlockZ() >> 4)) {
             return 0;
         }
 
@@ -197,9 +258,19 @@ public class MobScalingService {
             } catch (IllegalArgumentException ex) {
                 continue;
             }
-            StructureType structureType = Bukkit.getRegistry(StructureType.class).get(namespacedKey);
-            if (structureType != null && location.getWorld().locateNearestStructure(location, structureType, 64, false) != null) {
-                return section.getInt(key, 0);
+            var registry = Bukkit.getRegistry(StructureType.class);
+            if (registry == null) {
+                continue;
+            }
+            StructureType structureType = registry.get(namespacedKey);
+            if (structureType != null) {
+                try {
+                    if (location.getWorld().locateNearestStructure(location, structureType, 64, false) != null) {
+                        return section.getInt(key, 0);
+                    }
+                } catch (Exception ex) {
+                    // Structure lookup failed (e.g. world not fully generated) — silently skip
+                }
             }
         }
         return 0;

@@ -8,13 +8,18 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class AmbientTask extends BukkitRunnable {
 
+    private static final long MAP_CLEANUP_INTERVAL = 6000L; // 5 minutes in ticks
+    private static final long EVENT_EXPIRY_MILLIS = 3600000L; // 1 hour without updates
+
     private final RPGMoodPlugin plugin;
     private final Map<String, Long> lastTriggeredEvents = new HashMap<>();
     private final Map<String, String> lastWeatherType = new HashMap<>();
+    private int tickCounter = 0;
 
     public AmbientTask(RPGMoodPlugin plugin) {
         this.plugin = plugin;
@@ -28,6 +33,28 @@ public class AmbientTask extends BukkitRunnable {
             }
             checkTimeEvents(player);
             checkWeatherEvents(player);
+        }
+
+        tickCounter++;
+        if (tickCounter >= MAP_CLEANUP_INTERVAL) {
+            tickCounter = 0;
+            evictStaleEntries();
+        }
+    }
+
+    /** Removes entries from tracking maps that haven't been updated in over an hour. */
+    private void evictStaleEntries() {
+        long now = System.currentTimeMillis();
+        long cutoff = now - EVENT_EXPIRY_MILLIS;
+
+        lastTriggeredEvents.values().removeIf(timestamp -> timestamp < cutoff);
+
+        // Preserve weather type entries for worlds that still exist; remove stale world entries
+        Iterator<Map.Entry<String, String>> wit = lastWeatherType.entrySet().iterator();
+        while (wit.hasNext()) {
+            if (Bukkit.getWorld(wit.next().getKey()) == null) {
+                wit.remove();
+            }
         }
     }
 

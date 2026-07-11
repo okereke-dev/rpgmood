@@ -50,4 +50,12 @@ public class ConfigManager {
         plugin.saveResource("zones.yml", false);
         plugin.saveResource("triggers.yml", false);
     }
+
+    /** Persists a single player toggle (effects/titles) to the config file without rewriting the entire document. */
+    public void savePlayerToggle(String configKey, java.util.UUID playerId, boolean enabled) {
+        String path = configKey + playerId;
+        config.set(path, enabled);
+        // Write the current config to disk
+        plugin.saveConfig();
+    }
 }
