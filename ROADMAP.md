@@ -1,6 +1,6 @@
 # RPGMood — Roadmap
 
-> Visión: Convertir RPGMood en un plugin de atmósfera RPG completo con progresión de jugador, eventos mundiales e inmersión profunda.
+> Visión: Convertir RPGMood en un plugin de atmósfera RPG completo con progresión de jugador, eventos mundiales, agricultura y cocina (inspirado en Harvest Moon NES/N64), e inmersión profunda.
 
 ---
 
@@ -97,6 +97,72 @@ Todos los bugs corregidos:
 ### 14. GUI de configuración en juego
 - Menú con clics para configurar zonas sin editar YAML
 - Integración con `/rpgmood admin config`
+
+---
+
+## 🚀 Visión a Largo Plazo
+
+| Feature | Descripción |
+|---------|-------------|
+| Clases RPG | Guerrero/Explorador/Superviviente con perks únicos |
+| Misiones diarias/semanales | Sistema de quests generados proceduralmente |
+| Reputación por zona | Matar mobs suma, morir resta; afecta títulos y mensajes |
+| Bosses regionales | Mobs especiales que spawnan al matar suficientes en un área |
+| Mapa/zona visualization | Partículas en bordes de zona o integración con Dynmap/BlueMap |
+| Facciones | Integración con FactionsUUID para territorios y bonus |
+
+### 15. 🌾 Agricultura RPG (Harvest Moon-style) — DENTRO DE RPGMOOD
+
+> Inspirado en Harvest Moon NES & N64. Módulo interno en `com.ricardo.rpgmood.farming`
+
+#### Calidad de cultivos
+- **Tres niveles**: Bronce < Plata < Oro
+- Factores que afectan calidad:
+  - Fertilidad del suelo por biome (configurable)
+  - Agua cercana (≤5 bloques = bonus)
+  - Lluvia riega automática; tormentas dañan
+  - Nivel de peligro de la zona (más riesgo = más fertilidad)
+
+#### 🥘 Cocina con Recetas
+- Sistema de recetas descubribles (experimentación o libros)
+- Ingredientes: cultivos + drops de mobs escalados
+- Buffes de "Mood" al comer:
+  - "Fortalecido" → +20% daño (60s)
+  - "Confortado" → Regeneración (30s)
+  - "Inspirado" → +50% XP (120s)
+  - "Agotado" → penalización si comes comida baja calidad
+
+#### 🌱 Ciclo de estaciones (30 días MC cada una)
+| Estación | Cultivos | Evento |
+|----------|----------|--------|
+| 🌸 Primavera | Zanahoria, Patata, Fresa | Festival de la Siembra |
+| ☀️ Verano | Tomate, Maíz, Sandía | Concurso de Cosecha |
+| 🍂 Otoño | Calabaza, Boniato, Manzana | Fiesta de la Cosecha |
+| ❄️ Invierno | Seta, Baya (forrajeo) | Mercado de Invierno |
+
+#### Integración con features existentes
+| Feature RPGMood | Integración |
+|----------------|-------------|
+| ZoneManager | Bonificación de crecimiento por zona/bioma |
+| MobScalingService | Mobs de alto nivel dropean ingredientes raros |
+| PlayerJournalService | "Descubriste la receta: Estofado del Bosque" |
+| PlayerStatsService | Top cocineros, top cosechadores |
+| DeathMessageListener | Mensajes especiales si mueres con hambre |
+| AmbientTask | Eventos estacionales automáticos |
+
+#### Archivos estimados (~10 nuevos)
+```
+RPGMood/src/main/java/com/ricardo/rpgmood/farming/
+  ├── CropManager.java        — Calidad, crecimiento, cosecha
+  ├── SeasonManager.java      — Ciclo de estaciones
+  ├── SeasonTask.java         — Tareas programadas por estación
+  ├── RecipeManager.java      — Recetas y descubrimiento
+  ├── CookingListener.java    — Eventos de cocina
+  ├── CropQuality.java        — Enum/record de calidad
+  ├── Recipe.java             — Modelo de receta
+  ├── FarmingCommand.java     — Subcomandos /rpgmood farm|cook|season
+  └── farming.yml             — Configuración del módulo
+```
 
 ---
 
