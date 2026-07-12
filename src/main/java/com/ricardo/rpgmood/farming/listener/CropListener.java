@@ -50,7 +50,7 @@ public class CropListener implements Listener {
         event.setCancelled(true); // cancel normal break, we handle it
 
         if (!cropManager.isMature(block)) {
-            player.sendActionBar(Component.text("This crop isn't ready yet.").color(NamedTextColor.YELLOW));
+            plugin.getMessageService().send(player, Component.text("This crop isn't ready yet.").color(NamedTextColor.YELLOW));
             return;
         }
 
@@ -63,7 +63,7 @@ public class CropListener implements Listener {
         // Reset to air (remove the crop)
         block.setType(Material.AIR);
 
-        player.sendActionBar(Component.text("Harvested!").color(NamedTextColor.GREEN));
+        plugin.getMessageService().send(player, Component.text("Harvested!").color(NamedTextColor.GREEN));
     }
 
     /**
@@ -94,12 +94,12 @@ public class CropListener implements Listener {
                 block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), drop);
             }
             block.setType(Material.AIR);
-            player.sendActionBar(Component.text("Harvested!").color(NamedTextColor.GREEN));
+            plugin.getMessageService().send(player, Component.text("Harvested!").color(NamedTextColor.GREEN));
         } else {
             // Show quality preview for growing crop
             double score = cropManager.calculateQualityScore(block.getLocation(), player);
             CropQuality quality = cropManager.scoreToQuality(score);
-            player.sendActionBar(Component.text()
+            plugin.getMessageService().send(player, Component.text()
                     .append(Component.text("Growing... ", NamedTextColor.GRAY))
                     .append(Component.text("Predicted quality: ", NamedTextColor.WHITE))
                     .append(Component.text(quality.getDisplayName()))

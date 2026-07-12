@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1] — 2026-07-12
+
+### Fixed
+- **Zone `flavor_texts` never rotated** — for configured zones, the action-bar flavor line always showed `flavor_texts[0]`, forever, regardless of how many lines were written. Fixed by folding `subtitle` + `flavor_texts` into one pool and picking a line (deterministically, varying by location) to show *as* the Title's Subtitle — no separate action-bar message anymore, so it also can't be interrupted by anything else.
+- **Action-bar messages getting stomped** — ambient time/weather messages, zone flavor, and farming/animal feedback (harvesting, feeding, petting, etc.) were four independent, uncoordinated systems fighting for the same action-bar line; whichever fired last won, often less than a second after the previous one appeared. Zone feedback moved off action bar entirely (see above); `MessageService.send()` now resends action-bar messages twice over ~2s so they survive a vanilla fade-out or a later message, with a per-player generation check so a stale resend can never overwrite a newer message.
+- **Farming/animal feedback bypassing `MessageService`** — `CropListener`, `AnimalInteractListener`, `AnimalProductTask`, and `CookingListener` called `Player.sendActionBar()` directly, skipping the player's delivery-mode preference and the sticky-resend behavior above. All routed through `MessageService` now.
+
 ## [1.3.0] — 2026-07-12
 
 ### Added

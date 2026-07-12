@@ -168,7 +168,7 @@ public class CookingListener implements Listener {
 
         // Let vanilla campfire cooking happen normally
         // RPGMood recipes are handled through the crafting grid system
-        player.sendActionBar(Component.text("Try combining ingredients in a crafting table to discover recipes!")
+        plugin.getMessageService().send(player, Component.text("Try combining ingredients in a crafting table to discover recipes!")
                 .color(NamedTextColor.GRAY));
     }
 }

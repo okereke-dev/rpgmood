@@ -4,6 +4,22 @@
 
 ---
 
+## ✅ v1.3.1 — Auditoría de zonas/action bar (Completado)
+
+- Entrada a zona ya no usa action bar — `subtitle` + `flavor_texts` se fusionan en un pool
+  y se elige una línea (rotativa, no siempre la misma) para el Subtitle del Title. Arregla
+  un bug real: el flavor nunca rotaba para zonas configuradas (siempre `flavor_texts[0]`)
+- `MessageService` ahora reenvía los mensajes de action bar (ambiente, farming) para que no
+  se pisen entre sí ni se desvanezcan antes de tiempo, con guard de "generación" para que un
+  reenvío atrasado no le gane a un mensaje más nuevo
+- Todo el feedback de farming/animales (`CropListener`, `AnimalInteractListener`,
+  `AnimalProductTask`, `CookingListener`) pasa ahora por `MessageService` en vez de llamar
+  `sendActionBar()` directo
+
+Ver `CHANGELOG.md` para el detalle completo.
+
+---
+
 ## ✅ v1.3.0 — Más logros + integración RPGLoot (Completado)
 
 - **16 logros nuevos** (15 → 31), agrupados en categorías (Exploración/Combate/Supervivencia/

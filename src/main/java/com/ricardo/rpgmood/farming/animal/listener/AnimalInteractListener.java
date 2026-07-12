@@ -51,7 +51,7 @@ public class AnimalInteractListener implements Listener {
 
         // Check ownership
         if (!animal.getOwnerId().equals(player.getUniqueId())) {
-            player.sendActionBar(Component.text("This isn't your animal!").color(NamedTextColor.RED));
+            plugin.getMessageService().send(player, Component.text("This isn't your animal!").color(NamedTextColor.RED));
             event.setCancelled(true);
             return;
         }
@@ -90,7 +90,7 @@ public class AnimalInteractListener implements Listener {
     private void handlePet(Player player, AnimalData animal, AnimalManager manager) {
         int today = manager.getCurrentServerDay();
         if (animal.getLastInteractionDay() == today) {
-            player.sendActionBar(Component.text(animal.getName() + " has been petted today already.")
+            plugin.getMessageService().send(player, Component.text(animal.getName() + " has been petted today already.")
                     .color(NamedTextColor.YELLOW));
             return;
         }
@@ -102,7 +102,7 @@ public class AnimalInteractListener implements Listener {
             plugin.getAchievementManager().onAnimalMaxAffection(player);
         }
 
-        player.sendActionBar(Component.text()
+        plugin.getMessageService().send(player, Component.text()
                 .append(Component.text("\uD83D\uDC4B You pet ", NamedTextColor.GREEN))
                 .append(Component.text(animal.getName(), NamedTextColor.WHITE))
                 .append(Component.text(". Affection +1", NamedTextColor.GRAY))
@@ -110,7 +110,7 @@ public class AnimalInteractListener implements Listener {
 
         int hearts = animal.getHeartLevel();
         if (hearts > 0) {
-            player.sendActionBar(Component.text("❤️".repeat(hearts) + "♡".repeat(5 - hearts))
+            plugin.getMessageService().send(player, Component.text("❤️".repeat(hearts) + "♡".repeat(5 - hearts))
                     .color(NamedTextColor.RED));
         }
     }
@@ -120,7 +120,7 @@ public class AnimalInteractListener implements Listener {
     private void handleBrush(Player player, AnimalData animal, AnimalManager manager) {
         int today = manager.getCurrentServerDay();
         if (animal.getLastInteractionDay() == today) {
-            player.sendActionBar(Component.text(animal.getName() + " is already clean today.")
+            plugin.getMessageService().send(player, Component.text(animal.getName() + " is already clean today.")
                     .color(NamedTextColor.YELLOW));
             return;
         }
@@ -133,7 +133,7 @@ public class AnimalInteractListener implements Listener {
             plugin.getAchievementManager().onAnimalMaxAffection(player);
         }
 
-        player.sendActionBar(Component.text()
+        plugin.getMessageService().send(player, Component.text()
                 .append(Component.text("\uD83E\uDDFB Brushed ", NamedTextColor.AQUA))
                 .append(Component.text(animal.getName(), NamedTextColor.WHITE))
                 .append(Component.text(". Affection +2!", NamedTextColor.GRAY))
@@ -146,19 +146,19 @@ public class AnimalInteractListener implements Listener {
         int today = manager.getCurrentServerDay();
 
         if (!animal.canProduceToday(today)) {
-            player.sendActionBar(Component.text(animal.getName() + " has already been milked today.")
+            plugin.getMessageService().send(player, Component.text(animal.getName() + " has already been milked today.")
                     .color(NamedTextColor.YELLOW));
             return;
         }
 
         if (animal.isSick()) {
-            player.sendActionBar(Component.text(animal.getName() + " is sick and can't be milked.")
+            plugin.getMessageService().send(player, Component.text(animal.getName() + " is sick and can't be milked.")
                     .color(NamedTextColor.RED));
             return;
         }
 
         if (animal.getLastFedDay() < today - 1) {
-            player.sendActionBar(Component.text(animal.getName() + " needs to eat first!")
+            plugin.getMessageService().send(player, Component.text(animal.getName() + " needs to eat first!")
                     .color(NamedTextColor.RED));
             return;
         }
@@ -179,7 +179,7 @@ public class AnimalInteractListener implements Listener {
 
         // Try to add to inventory or drop
         if (player.getInventory().addItem(milk).isEmpty()) {
-            player.sendActionBar(Component.text()
+            plugin.getMessageService().send(player, Component.text()
                     .append(Component.text("\uD83E\uDD5C Milked ", NamedTextColor.WHITE))
                     .append(Component.text(animal.getName(), NamedTextColor.WHITE))
                     .append(Component.text("! Quality: ", NamedTextColor.GRAY))
@@ -210,13 +210,13 @@ public class AnimalInteractListener implements Listener {
         int today = manager.getCurrentServerDay();
 
         if (!animal.canProduceToday(today)) {
-            player.sendActionBar(Component.text(animal.getName() + " has no wool yet. Wait 3 days.")
+            plugin.getMessageService().send(player, Component.text(animal.getName() + " has no wool yet. Wait 3 days.")
                     .color(NamedTextColor.YELLOW));
             return;
         }
 
         if (animal.isSick()) {
-            player.sendActionBar(Component.text(animal.getName() + " is sick and has poor wool.")
+            plugin.getMessageService().send(player, Component.text(animal.getName() + " is sick and has poor wool.")
                     .color(NamedTextColor.RED));
             return;
         }
@@ -251,7 +251,7 @@ public class AnimalInteractListener implements Listener {
             plugin.getAchievementManager().onAnimalMaxAffection(player);
         }
 
-        player.sendActionBar(Component.text()
+        plugin.getMessageService().send(player, Component.text()
                 .append(Component.text("\uD83D\uDC11 Sheared ", NamedTextColor.WHITE))
                 .append(Component.text(animal.getName(), NamedTextColor.WHITE))
                 .append(Component.text("! Got " + quantity + "x Wool (" + quality.getDisplayName() + ")", NamedTextColor.GRAY))
@@ -264,7 +264,7 @@ public class AnimalInteractListener implements Listener {
         int today = manager.getCurrentServerDay();
 
         if (animal.isFedToday(today)) {
-            player.sendActionBar(Component.text(animal.getName() + " is already full today.")
+            plugin.getMessageService().send(player, Component.text(animal.getName() + " is already full today.")
                     .color(NamedTextColor.YELLOW));
             return;
         }
@@ -285,7 +285,7 @@ public class AnimalInteractListener implements Listener {
             plugin.getAchievementManager().onAnimalMaxAffection(player);
         }
 
-        player.sendActionBar(Component.text()
+        plugin.getMessageService().send(player, Component.text()
                 .append(Component.text("\uD83C\uDF3E Fed ", NamedTextColor.GREEN))
                 .append(Component.text(animal.getName(), NamedTextColor.WHITE))
                 .append(Component.text(". Affection +3!", NamedTextColor.GRAY))

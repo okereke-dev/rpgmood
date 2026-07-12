@@ -803,26 +803,39 @@ public class ZoneManager {
         return configuredToken.contains(biomeToken) || biomeToken.contains(configuredToken);
     }
 
+    /**
+     * Sends zone-entry feedback entirely through Title/Subtitle + sound/particles — no action bar.
+     * The subtitle is picked (per-visit, deterministically by location) from a pool combining the
+     * zone's configured {@code subtitle} with its {@code flavor_texts}, so the variety those extra
+     * lines were meant to provide actually shows up, and the whole thing rides one channel that
+     * nothing else in the plugin ever contends for.
+     */
     private void sendZoneFeedback(Player player, String zoneName, boolean showTitle) {
         var section = plugin.getConfigManager().getZones().getConfigurationSection("zones." + zoneName);
         String titleText;
         String subtitleText;
         String sound;
-        String flavorLine;
 
         if (section != null) {
             titleText = section.getString("title", "");
-            subtitleText = section.getString("subtitle", "");
             sound = section.getString("sound", DEFAULT_SOUND);
-            List<String> flavorTexts = section.getStringList("flavor_texts");
-            flavorLine = flavorTexts.isEmpty()
-                    ? "A new zone awakens your imagination."
-                    : flavorTexts.get(0);
+
+            List<String> subtitlePool = new ArrayList<>();
+            String configuredSubtitle = section.getString("subtitle", "");
+            if (!configuredSubtitle.isBlank()) {
+                subtitlePool.add(configuredSubtitle);
+            }
+            subtitlePool.addAll(section.getStringList("flavor_texts"));
+            subtitleText = pickSubtitle(player, subtitlePool);
         } else {
             titleText = getDynamicZoneTitle(player, zoneName);
-            subtitleText = getDynamicZoneSubtitle(player);
             sound = DEFAULT_SOUND;
-            flavorLine = getDynamicZoneFlavorText(player);
+
+            String biomeGroup = normalizeBiomeGroup(player.getLocation().getBlock().getBiome().name().toUpperCase(Locale.ROOT));
+            List<String> subtitlePool = new ArrayList<>();
+            subtitlePool.add(BIOME_SUBTITLES.getOrDefault(biomeGroup, "A strange new land stretches forth..."));
+            subtitlePool.addAll(BIOME_FLAVOR_TEXTS.getOrDefault(biomeGroup, List.of()));
+            subtitleText = pickSubtitle(player, subtitlePool);
         }
 
         String legacyTitle = ChatColor.translateAlternateColorCodes('&', titleText);
@@ -844,17 +857,15 @@ public class ZoneManager {
         if (!titleText.isBlank()) {
             plugin.getPlayerJournalService().addEntry(player, "Arrived at " + legacyTitle + ChatColor.RESET + ".");
         }
+    }
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!player.isOnline()) {
-                    cancel();
-                    return;
-                }
-                plugin.getMessageService().send(player, flavorLine);
-            }
-        }.runTaskLater(plugin, 20L);
+    /** Deterministically picks one line from a pool of subtitle/flavor candidates, varying by location so repeat visits don't always show the same line. */
+    private String pickSubtitle(Player player, List<String> candidates) {
+        if (candidates.isEmpty()) {
+            return "A new zone awakens your imagination.";
+        }
+        int index = Math.abs(player.getLocation().hashCode()) % candidates.size();
+        return candidates.get(index);
     }
 
     private String getDynamicZoneTitle(Player player, String zoneName) {
@@ -896,18 +907,6 @@ public class ZoneManager {
         lastZones.remove(id);
         recentTitleShownAt.remove(id);
         cancelPending(id);
-    }
-
-    private String getDynamicZoneSubtitle(Player player) {
-        String biomeGroup = normalizeBiomeGroup(player.getLocation().getBlock().getBiome().name().toUpperCase(Locale.ROOT));
-        return BIOME_SUBTITLES.getOrDefault(biomeGroup, "A strange new land stretches forth...");
-    }
-
-    private String getDynamicZoneFlavorText(Player player) {
-        String biomeGroup = normalizeBiomeGroup(player.getLocation().getBlock().getBiome().name().toUpperCase(Locale.ROOT));
-        List<String> flavorTexts = BIOME_FLAVOR_TEXTS.getOrDefault(biomeGroup, List.of("A new zone awakens your imagination."));
-        int index = Math.abs(player.getLocation().hashCode()) % flavorTexts.size();
-        return flavorTexts.get(index);
     }
 
     public static String normalizeBiomeGroup(String biomeKey) {

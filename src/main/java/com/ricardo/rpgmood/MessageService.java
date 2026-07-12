@@ -2,7 +2,12 @@ package com.ricardo.rpgmood;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Centralises message delivery for all RPGMood ambient messages.
@@ -14,12 +19,18 @@ import org.bukkit.entity.Player;
  */
 public class MessageService {
 
+    /** How many extra times an action-bar message is resent, and how far apart, so it survives a vanilla fade-out or another plugin's action-bar call landing right after it. */
+    private static final int STICKY_RESENDS = 2;
+    private static final long STICKY_INTERVAL_TICKS = 20L;
+
     public enum DeliveryMode {
         CHAT,
         ACTION_BAR
     }
 
     private final RPGMoodPlugin plugin;
+    /** Per-player counter bumped on every action-bar send, so a stale queued resend can detect it's been superseded and skip itself instead of overwriting a newer message. */
+    private final Map<UUID, Integer> actionBarGeneration = new ConcurrentHashMap<>();
 
     public MessageService(RPGMoodPlugin plugin) {
         this.plugin = plugin;
@@ -33,7 +44,7 @@ public class MessageService {
         Component message = LegacyComponentSerializer.legacyAmpersand().deserialize(legacyMessage);
 
         switch (mode) {
-            case ACTION_BAR -> player.sendActionBar(message);
+            case ACTION_BAR -> sendActionBarSticky(player, message);
             case CHAT -> player.sendMessage(message);
         }
     }
@@ -44,8 +55,29 @@ public class MessageService {
         DeliveryMode mode = getEffectiveMode(player);
 
         switch (mode) {
-            case ACTION_BAR -> player.sendActionBar(message);
+            case ACTION_BAR -> sendActionBarSticky(player, message);
             case CHAT -> player.sendMessage(message);
+        }
+    }
+
+    /**
+     * Sends an action-bar message and resends it a couple more times a second apart, so it
+     * doesn't vanish before it's been read if it fades out on its own or another plugin (or
+     * another RPGMood system) sends its own action-bar message a moment later.
+     */
+    private void sendActionBarSticky(Player player, Component message) {
+        UUID uuid = player.getUniqueId();
+        int generation = actionBarGeneration.merge(uuid, 1, Integer::sum);
+
+        player.sendActionBar(message);
+        for (int i = 1; i <= STICKY_RESENDS; i++) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                // Skip if a newer message has since been sent to this player — otherwise this
+                // stale resend would overwrite it instead of reinforcing it.
+                if (player.isOnline() && actionBarGeneration.getOrDefault(uuid, -1) == generation) {
+                    player.sendActionBar(message);
+                }
+            }, STICKY_INTERVAL_TICKS * i);
         }
     }
 

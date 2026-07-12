@@ -97,7 +97,7 @@ public class AnimalProductTask extends BukkitRunnable {
         if (owner != null && owner.isOnline()
                 && owner.getWorld().equals(entity.getWorld())
                 && owner.getLocation().distance(entity.getLocation()) < 50) {
-            owner.sendActionBar(net.kyori.adventure.text.Component.text()
+            plugin.getMessageService().send(owner, net.kyori.adventure.text.Component.text()
                     .append(net.kyori.adventure.text.Component.text("\uD83E\uDD5A ", net.kyori.adventure.text.format.NamedTextColor.YELLOW))
                     .append(net.kyori.adventure.text.Component.text(animal.getName() + " laid an egg! (" + quality.getDisplayName() + ")", net.kyori.adventure.text.format.NamedTextColor.WHITE))
                     .build());
