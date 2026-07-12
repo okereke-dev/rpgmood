@@ -54,18 +54,41 @@ Every death is also saved to the player's persistent adventure journal.
 
 ---
 
+## 🏆 Achievements
+
+**31 achievements** across exploration, combat, survival, and farming — `/rpgmood achievements` shows your progress grouped by category, unlocked ones announced in chat and logged to your journal.
+
+Not just grindy counters — the roster leans into things players actually chase for bragging rights: **Godslayer** (kill the Warden, Wither, Elder Guardian, *and* Ender Dragon), **Untouchable** (kill a level 20+ mob without ever taking damage from it), **Cartographer** (discover every zone you've configured), **Noah's Ark** (own one of every farm animal), and more. All persisted to `achievements.yml`, survive restarts.
+
+If **RPGLoot** is installed, 6 additional Loot achievements unlock — **Legendary Hunter**, **Relic Bearer**, and the ultimate flex, **Godslayer's Arsenal** (collect all 4 of RPGLoot's boss-exclusive Artifacts). Zero setup required and zero effect if RPGLoot isn't installed.
+
+---
+
+## 🌾 Harvest Moon-Style Farming
+
+A full farming, cooking, and animal-husbandry module (`/rpgmood-farm`), inspired by Harvest Moon NES/N64:
+
+- **Crop quality** — every harvest scores Bronze/Silver/Gold based on soil fertility (per biome), nearby water, rain, and the zone's danger level
+- **Four seasons** (Spring/Summer/Autumn/Winter, 30 MC days each) — each with its own growth multiplier and season-exclusive crops
+- **Cooking & recipes** — discovered by experimenting with ingredients in a crafting table, grant temporary "Mood" buffs (bonus damage, regeneration, bonus XP)
+- **Animal husbandry** — buy, name, feed, pet, and milk/shear cows, chickens, sheep, and goats; an affection system drives product quality, and neglect leads to sickness
+
+---
+
 ## 🌦️ Ambient Time & Weather Events
 
 Scheduled messages and sounds tied to time-of-day (dawn, midday, dusk, midnight) and weather transitions (rain/thunder start and stop), plus chance-based flavor messages on breaking configured blocks. All fully defined in `triggers.yml`.
 
 ---
 
-## 🔌 Integrations
+## 🔌 Integrations & Developer API
 
 Both optional — RPGMood works standalone and detects these automatically at startup.
 
 - **PlaceholderAPI** — `%rpgmood_zone%`, `%rpgmood_area_danger%` for scoreboards and tab list
 - **WorldGuard** — enables region-based zones
+- **RPGLoot** — soft, zero-dependency integration in both directions: RPGLoot raises drop rarity floors near dangerous RPGMood mobs, and RPGMood's achievements react to RPGLoot's rarities/artifacts/sets. Neither plugin requires the other.
+- **Public API for developers** — `PlayerZoneChangeEvent`, `MobScaleEvent`, `PlayerDeathMessageEvent`, `PlayerCropHarvestEvent` let other plugins hook into RPGMood without a hard dependency
 
 ---
 
