@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.0] — 2026-07-12
+
+### Added
+- **GUI menu** — `/rpgmood` with no arguments (or `/rpgmood menu` explicitly) opens an inventory-based hub: Adventure Journal, Achievements (category-filtered), Current Zone (open to all players, not just admins), Leaderboard, Farming, My Animals, Settings, and — if RPGLoot is installed — an RPGLoot panel (equipped rarities, active set, lifetime stats read from `playerstats.yml`). Coexists with every existing text command; nothing is removed from the chat-based flows.
+- **Tab-completion** on all three commands (`/rpgmood`, `/diary`, `/rpgmood-farm`) — none had any before.
+- **Custom join/quit messages** — replace the vanilla chat broadcast with an action-bar (or chat, per player preference) message and a sound, with a distinct template + sound for a player's very first join. Configurable via new `messages.player_join`, `messages.player_join_first_time`, `messages.player_quit`, `messages.join_sound`, `messages.join_first_time_sound`, `messages.quit_sound` keys.
+- **Action Bar Delivery is now reachable** — the per-player `player_actionbar.<uuid>` preference existed in `MessageService` since the zone/action-bar audit but no command ever called it; it's now a toggle in the GUI's Settings panel.
+
+### Changed
+- `/rpgmood-farm animal info` removed — it only existed to tell you to right-click with a stick, which is already documented in `showHelp()`.
+
 ## [1.4.0] — 2026-07-12
 
 ### Changed

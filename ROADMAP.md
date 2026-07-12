@@ -4,6 +4,22 @@
 
 ---
 
+## ✅ v1.5.0 — Menú GUI, limpieza de comandos, mensajes de conexión (Completado)
+
+- Menú de inventario (`/rpgmood` o `/rpgmood menu`): journal, achievements por categoría,
+  zona actual (abierto a todos, no solo admins), leaderboard, farming, mis animales,
+  ajustes, y panel de RPGLoot si está instalado (equipo, set activo, stats de por vida)
+- Tab-completion en los 3 comandos (`/rpgmood`, `/diary`, `/rpgmood-farm`) — ninguno tenía
+- `/rpgmood-farm animal info` eliminado (comando vacío, solo redirigía a usar un stick)
+- Mensajes de conexión custom (join/quit) por action bar/chat + sonido, reemplazan el chat
+  vanilla, con plantilla distinta para la primera vez que un jugador entra
+- El toggle de Action Bar/Chat (`player_actionbar.<uuid>`) por fin es alcanzable — vivía
+  muerto en `MessageService` desde la auditoría de zonas/action bar
+
+Ver `CHANGELOG.md` para el detalle completo.
+
+---
+
 ## ✅ v1.4.0 — Animales 100% vanilla, sin tienda (Completado)
 
 - Se eliminó `/rpgmood-farm animal buy` y toda la economía de compra

@@ -7,6 +7,7 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
@@ -17,7 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DiarioCommand implements CommandExecutor {
+public class DiarioCommand implements CommandExecutor, TabCompleter {
 
     private static final int MAX_PAGE_LENGTH = 245; // Safely under Minecraft's 256-char page limit
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("MMM d, HH:mm").withZone(ZoneId.systemDefault());
@@ -38,7 +39,12 @@ public class DiarioCommand implements CommandExecutor {
             sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(plugin.getConfig().getString("messages.no_permission", "&cNo permission")));
             return true;
         }
+        openJournal(player);
+        return true;
+    }
 
+    /** Builds and opens the player's adventure journal book. Shared by the /diary command and the RPGMood menu. */
+    public void openJournal(Player player) {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
         meta.setTitle("Adventure Journal");
@@ -55,7 +61,11 @@ public class DiarioCommand implements CommandExecutor {
 
         book.setItemMeta(meta);
         player.openBook(book);
-        return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        return List.of();
     }
 
     /** Builds book pages respecting Minecraft's character limit, splitting entries across pages as needed. */

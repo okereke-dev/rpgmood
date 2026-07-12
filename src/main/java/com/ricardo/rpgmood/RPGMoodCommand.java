@@ -1,17 +1,20 @@
 package com.ricardo.rpgmood;
 
+import com.ricardo.rpgmood.menu.MainMenu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
 import java.util.List;
+import java.util.Locale;
 
-public class RPGMoodCommand implements CommandExecutor {
+public class RPGMoodCommand implements CommandExecutor, TabCompleter {
 
     private final RPGMoodPlugin plugin;
 
@@ -21,9 +24,8 @@ public class RPGMoodCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) {
-            sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle [titles]|info|leaderboard [deaths|zones|level]|achievements").color(NamedTextColor.RED));
-            return true;
+        if (args.length == 0 || args[0].equalsIgnoreCase("menu")) {
+            return handleMenu(sender);
         }
 
         if (args[0].equalsIgnoreCase("info")) {
@@ -95,7 +97,17 @@ public class RPGMoodCommand implements CommandExecutor {
             return true;
         }
 
-        sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle [titles]|info|leaderboard [deaths|zones|level]|achievements").color(NamedTextColor.RED));
+        sender.sendMessage(Component.text("Usage: /rpgmood menu|reload|toggle [titles]|info|leaderboard [deaths|zones|level]|achievements").color(NamedTextColor.RED));
+        return true;
+    }
+
+    private boolean handleMenu(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Component.text("Only players can use this command.").color(NamedTextColor.RED));
+            return true;
+        }
+        MainMenu menu = new MainMenu(plugin, player);
+        player.openInventory(menu.getInventory());
         return true;
     }
 
@@ -211,5 +223,26 @@ public class RPGMoodCommand implements CommandExecutor {
             player.sendMessage(Component.text(type.name() + " would spawn at level: ").color(NamedTextColor.GRAY).append(Component.text(level).color(NamedTextColor.YELLOW)));
         }
         return true;
+    }
+
+    // -- Tab completion --
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 1) {
+            return filterStartsWith(List.of("menu", "reload", "toggle", "info", "leaderboard", "achievements"), args[0]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("toggle")) {
+            return filterStartsWith(List.of("titles"), args[1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("leaderboard")) {
+            return filterStartsWith(List.of("deaths", "zones", "level"), args[1]);
+        }
+        return List.of();
+    }
+
+    private static List<String> filterStartsWith(List<String> options, String prefix) {
+        String lower = prefix.toLowerCase(Locale.ROOT);
+        return options.stream().filter(o -> o.startsWith(lower)).toList();
     }
 }

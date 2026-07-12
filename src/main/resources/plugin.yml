@@ -1,5 +1,5 @@
 name: RPGMood
-version: 1.4.0
+version: 1.5.0
 main: com.ricardo.rpgmood.RPGMoodPlugin
 api-version: '1.20'
 author: Ricardo
@@ -7,7 +7,7 @@ softdepend: [PlaceholderAPI, WorldGuard]
 commands:
   rpgmood:
     description: Main RPGMood commands
-    usage: /rpgmood <reload|toggle [titles]|info|leaderboard [deaths|zones|level]|achievements>
+    usage: /rpgmood <menu|reload|toggle [titles]|info|leaderboard [deaths|zones|level]|achievements>
   diary:
     description: Opens the player's adventure journal
     usage: /diary
@@ -15,7 +15,7 @@ commands:
     permission: rpgmood.player.diary
   rpgmood-farm:
     description: RPGMood farming commands
-    usage: /rpgmood-farm <season|crops|recipes [all]|animal list|info>
+    usage: /rpgmood-farm <season|crops|recipes [all]|animal list>
     permission: rpgmood.player.farming
 permissions:
   rpgmood.admin:

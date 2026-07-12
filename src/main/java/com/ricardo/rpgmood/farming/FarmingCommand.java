@@ -9,6 +9,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.List;
 /**
  * Handles /rpgmood-farm subcommands: season, crops, recipes, animal.
  */
-public class FarmingCommand implements CommandExecutor {
+public class FarmingCommand implements CommandExecutor, TabCompleter {
 
     private final RPGMoodPlugin plugin;
 
@@ -56,8 +57,8 @@ public class FarmingCommand implements CommandExecutor {
                 .append(Component.text(" — Show recipes").color(NamedTextColor.WHITE)));
         player.sendMessage(Component.text("/rpgmood-farm animal list").color(NamedTextColor.GRAY)
                 .append(Component.text(" — List your animals").color(NamedTextColor.WHITE)));
-        player.sendMessage(Component.text("/rpgmood-farm animal info").color(NamedTextColor.GRAY)
-                .append(Component.text(" — Look at animal with stick").color(NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("Tip: ").color(NamedTextColor.DARK_GRAY)
+                .append(Component.text("feed a wild cow/chicken/sheep/goat its favorite food to befriend it, or look at your own with a stick for details!").color(NamedTextColor.DARK_GRAY)));
     }
 
     // -- Season --
@@ -157,16 +158,11 @@ public class FarmingCommand implements CommandExecutor {
     // -- Animal Commands --
 
     private void handleAnimal(Player player, String[] args) {
-        if (args.length < 2) {
-            player.sendMessage(Component.text("Usage: /rpgmood-farm animal list|info").color(NamedTextColor.RED));
+        if (args.length < 2 || !args[1].equalsIgnoreCase("list")) {
+            player.sendMessage(Component.text("Usage: /rpgmood-farm animal list").color(NamedTextColor.RED));
             return;
         }
-
-        switch (args[1].toLowerCase()) {
-            case "list" -> handleAnimalList(player);
-            case "info" -> handleAnimalInfo(player);
-            default -> player.sendMessage(Component.text("Unknown subcommand. Use: list, info").color(NamedTextColor.RED));
-        }
+        handleAnimalList(player);
     }
 
     private void handleAnimalList(Player player) {
@@ -194,8 +190,24 @@ public class FarmingCommand implements CommandExecutor {
         }
     }
 
-    private void handleAnimalInfo(Player player) {
-        player.sendMessage(Component.text("Look at an animal and right-click with a stick to see its info!")
-                .color(NamedTextColor.YELLOW));
+    // -- Tab completion --
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 1) {
+            return filterStartsWith(List.of("season", "crops", "recipes", "animal"), args[0]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("recipes")) {
+            return filterStartsWith(List.of("all"), args[1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("animal")) {
+            return filterStartsWith(List.of("list"), args[1]);
+        }
+        return List.of();
+    }
+
+    private static List<String> filterStartsWith(List<String> options, String prefix) {
+        String lower = prefix.toLowerCase(java.util.Locale.ROOT);
+        return options.stream().filter(o -> o.startsWith(lower)).toList();
     }
 }

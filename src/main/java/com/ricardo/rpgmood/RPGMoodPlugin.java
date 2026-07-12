@@ -6,11 +6,13 @@ import com.ricardo.rpgmood.farming.RecipeManager;
 import com.ricardo.rpgmood.farming.SeasonManager;
 import com.ricardo.rpgmood.farming.SeasonTask;
 import com.ricardo.rpgmood.farming.animal.AnimalManager;
+import com.ricardo.rpgmood.farming.animal.listener.AnimalBreedListener;
 import com.ricardo.rpgmood.farming.animal.listener.AnimalFeedTask;
 import com.ricardo.rpgmood.farming.animal.listener.AnimalInteractListener;
 import com.ricardo.rpgmood.farming.animal.listener.AnimalProductTask;
 import com.ricardo.rpgmood.farming.listener.CookingListener;
 import com.ricardo.rpgmood.farming.listener.CropListener;
+import com.ricardo.rpgmood.menu.RPGMoodMenuListener;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -33,6 +35,7 @@ public class RPGMoodPlugin extends JavaPlugin {
     private CropManager cropManager;
     private RecipeManager recipeManager;
     private AnimalManager animalManager;
+    private DiarioCommand diarioCommand;
     private boolean worldGuardActive;
 
     @Override
@@ -60,9 +63,17 @@ public class RPGMoodPlugin extends JavaPlugin {
         this.recipeManager = new RecipeManager(this);
         this.animalManager = new AnimalManager(this);
 
-        getCommand("rpgmood").setExecutor(new RPGMoodCommand(this));
-        getCommand("diary").setExecutor(new DiarioCommand(this));
-        getCommand("rpgmood-farm").setExecutor(new FarmingCommand(this));
+        RPGMoodCommand rpgMoodCommand = new RPGMoodCommand(this);
+        getCommand("rpgmood").setExecutor(rpgMoodCommand);
+        getCommand("rpgmood").setTabCompleter(rpgMoodCommand);
+
+        this.diarioCommand = new DiarioCommand(this);
+        getCommand("diary").setExecutor(diarioCommand);
+        getCommand("diary").setTabCompleter(diarioCommand);
+
+        FarmingCommand farmingCommand = new FarmingCommand(this);
+        getCommand("rpgmood-farm").setExecutor(farmingCommand);
+        getCommand("rpgmood-farm").setTabCompleter(farmingCommand);
 
         Bukkit.getPluginManager().registerEvents(new ZoneListener(this), this);
         Bukkit.getPluginManager().registerEvents(new BlockListener(this), this);
@@ -72,7 +83,10 @@ public class RPGMoodPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new CropListener(this), this);
         Bukkit.getPluginManager().registerEvents(new CookingListener(this), this);
         Bukkit.getPluginManager().registerEvents(new AnimalInteractListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new AnimalBreedListener(this), this);
         Bukkit.getPluginManager().registerEvents(new LightningListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new PlayerConnectionListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new RPGMoodMenuListener(), this);
         Bukkit.getPluginManager().registerEvents(new RPGLootAchievementListener(this), this);
 
         new AmbientTask(this).runTaskTimer(this, 0L, 20L);
@@ -118,6 +132,7 @@ public class RPGMoodPlugin extends JavaPlugin {
     public CropManager getCropManager() { return cropManager; }
     public RecipeManager getRecipeManager() { return recipeManager; }
     public AnimalManager getAnimalManager() { return animalManager; }
+    public DiarioCommand getDiarioCommand() { return diarioCommand; }
 
     /** True if the location is inside the named WorldGuard region. Always false if WorldGuard isn't installed. */
     public boolean isInsideWorldGuardRegion(Location location, String regionId) {

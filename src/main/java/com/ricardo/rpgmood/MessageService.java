@@ -93,6 +93,14 @@ public class MessageService {
         org.bukkit.Bukkit.broadcast(LegacyComponentSerializer.legacyAmpersand().deserialize(legacyMessage));
     }
 
+    /** Sends an ambient message to every online player, each via their own delivery preference (unlike {@link #broadcast}, which is always chat). */
+    public void broadcastAmbient(String legacyMessage) {
+        if (legacyMessage == null || legacyMessage.isBlank()) return;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            send(player, legacyMessage);
+        }
+    }
+
     /** Returns the effective delivery mode for a player, checking config + per-player toggle. */
     private DeliveryMode getEffectiveMode(Player player) {
         // Per-player toggle overrides global config

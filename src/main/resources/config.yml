@@ -13,6 +13,14 @@ messages:
   plugin_reloaded: "&a[RPGMood] Configuration reloaded successfully."
   toggle_enabled: "&a[RPGMood] Effects enabled."
   toggle_disabled: "&e[RPGMood] Effects disabled."
+  # Player connection messages — replace vanilla chat join/quit messages entirely.
+  # Supports {player}. Delivered like any other ambient message (respects each viewer's action-bar/chat preference).
+  player_join: "&a→ {player} joined the world."
+  player_join_first_time: "&6✨ {player} arrived for the very first time!"
+  player_quit: "&7← {player} left the world."
+  join_sound: "entity.player.levelup"
+  join_first_time_sound: "ui.toast.challenge_complete"
+  quit_sound: "entity.villager.no"
 
 mob_scaling:
   enabled: true
