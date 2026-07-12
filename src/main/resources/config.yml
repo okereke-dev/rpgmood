@@ -26,10 +26,8 @@ mob_scaling:
     step_distance: 180
   players_bonus_per_player: 1
   name_format: "&cLv. {level} {name}"
-  # Show floating name tags above scaled mobs (invasive, defaults to false — use particle auras + action bar instead)
+  # Show floating name tags above scaled mobs (invasive, defaults to false — use particle auras instead)
   show_name_tags: false
-  # Show level/health in Action Bar when near a scaled mob (12 block radius)
-  proximity_actionbar: true
   bonus_xp_per_level: 2
   announcement:
     enabled: true
