@@ -88,9 +88,9 @@ public class AmbientTask extends BukkitRunnable {
                 }
 
                 lastTriggeredEvents.put(eventKey, now);
-                Component message = LegacyComponentSerializer.legacyAmpersand().deserialize(eventSection.getString("message", ""));
+                String messageStr = eventSection.getString("message", "");
                 String sound = eventSection.getString("sound", "entity.player.levelup");
-                player.sendMessage(message);
+                plugin.getMessageService().send(player, messageStr);
                 player.playSound(player.getLocation(), sound, 0.8f, 1.0f);
             }
         }
@@ -147,9 +147,9 @@ public class AmbientTask extends BukkitRunnable {
             }
 
             lastTriggeredEvents.put(eventId, now);
-            Component message = LegacyComponentSerializer.legacyAmpersand().deserialize(eventSection.getString("message", ""));
+            String messageStr = eventSection.getString("message", "");
             String sound = eventSection.getString("sound", "entity.player.levelup");
-            player.sendMessage(message);
+            plugin.getMessageService().send(player, messageStr);
             player.playSound(player.getLocation(), sound, 0.8f, 1.0f);
         }
 

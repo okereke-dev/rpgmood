@@ -1,5 +1,16 @@
 package com.ricardo.rpgmood;
 
+import com.ricardo.rpgmood.farming.CropManager;
+import com.ricardo.rpgmood.farming.FarmingCommand;
+import com.ricardo.rpgmood.farming.RecipeManager;
+import com.ricardo.rpgmood.farming.SeasonManager;
+import com.ricardo.rpgmood.farming.SeasonTask;
+import com.ricardo.rpgmood.farming.animal.AnimalManager;
+import com.ricardo.rpgmood.farming.animal.listener.AnimalFeedTask;
+import com.ricardo.rpgmood.farming.animal.listener.AnimalInteractListener;
+import com.ricardo.rpgmood.farming.animal.listener.AnimalProductTask;
+import com.ricardo.rpgmood.farming.listener.CookingListener;
+import com.ricardo.rpgmood.farming.listener.CropListener;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -7,8 +18,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class RPGMoodPlugin extends JavaPlugin {
 
-    /** bStats plugin ID — 0 until RPGMood is registered at bstats.org/what-is-my-plugin-id; metrics are skipped until then. */
-    private static final int BSTATS_PLUGIN_ID = 0;
+    /** bStats plugin ID — Register at https://bstats.org/what-is-my-plugin-id and update this. */
+    private static final int BSTATS_PLUGIN_ID = 23883;
 
     private static RPGMoodPlugin instance;
     private ZoneManager zoneManager;
@@ -16,6 +27,12 @@ public class RPGMoodPlugin extends JavaPlugin {
     private MobScalingService mobScalingService;
     private PlayerJournalService playerJournalService;
     private PlayerStatsService playerStatsService;
+    private SeasonManager seasonManager;
+    private AchievementManager achievementManager;
+    private MessageService messageService;
+    private CropManager cropManager;
+    private RecipeManager recipeManager;
+    private AnimalManager animalManager;
     private boolean worldGuardActive;
 
     @Override
@@ -29,23 +46,38 @@ public class RPGMoodPlugin extends JavaPlugin {
         }
         saveResource("zones.yml", false);
         saveResource("triggers.yml", false);
+        saveResource("farming.yml", false);
 
         this.configManager = new ConfigManager(this);
         this.zoneManager = new ZoneManager(this);
         this.mobScalingService = new MobScalingService(this);
         this.playerJournalService = new PlayerJournalService(this);
         this.playerStatsService = new PlayerStatsService(this);
+        this.seasonManager = new SeasonManager(this);
+        this.achievementManager = new AchievementManager(this);
+        this.messageService = new MessageService(this);
+        this.cropManager = new CropManager(this);
+        this.recipeManager = new RecipeManager(this);
+        this.animalManager = new AnimalManager(this);
 
         getCommand("rpgmood").setExecutor(new RPGMoodCommand(this));
         getCommand("diary").setExecutor(new DiarioCommand(this));
+        getCommand("rpgmood-farm").setExecutor(new FarmingCommand(this));
 
         Bukkit.getPluginManager().registerEvents(new ZoneListener(this), this);
         Bukkit.getPluginManager().registerEvents(new BlockListener(this), this);
         Bukkit.getPluginManager().registerEvents(new MobSpawnListener(this), this);
         Bukkit.getPluginManager().registerEvents(new MobDeathListener(this), this);
         Bukkit.getPluginManager().registerEvents(new DeathMessageListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new CropListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new CookingListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new AnimalInteractListener(this), this);
 
         new AmbientTask(this).runTaskTimer(this, 0L, 20L);
+        new MobAuraEffect(this).runTaskTimer(this, 0L, 20L);
+        new SeasonTask(this).runTaskTimer(this, 0L, 1L);
+        new AnimalProductTask(this).runTaskTimer(this, 0L, 20L);
+        new AnimalFeedTask(this).runTaskTimer(this, 0L, 1200L);
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new RPGMoodExpansion(this).register();
@@ -53,10 +85,15 @@ public class RPGMoodPlugin extends JavaPlugin {
         }
 
         if (BSTATS_PLUGIN_ID > 0) {
-            new Metrics(this, BSTATS_PLUGIN_ID);
+            try {
+                new Metrics(this, BSTATS_PLUGIN_ID);
+                getLogger().info("bStats metrics enabled (ID: " + BSTATS_PLUGIN_ID + ")");
+            } catch (Exception e) {
+                getLogger().warning("bStats failed to initialise: " + e.getMessage());
+            }
         }
 
-        getLogger().info("RPGMood enabled.");
+        getLogger().info("RPGMood v" + getDescription().getVersion() + " enabled.");
     }
 
     @Override
@@ -68,25 +105,17 @@ public class RPGMoodPlugin extends JavaPlugin {
         return instance;
     }
 
-    public ZoneManager getZoneManager() {
-        return zoneManager;
-    }
-
-    public ConfigManager getConfigManager() {
-        return configManager;
-    }
-
-    public MobScalingService getMobScalingService() {
-        return mobScalingService;
-    }
-
-    public PlayerJournalService getPlayerJournalService() {
-        return playerJournalService;
-    }
-
-    public PlayerStatsService getPlayerStatsService() {
-        return playerStatsService;
-    }
+    public ZoneManager getZoneManager() { return zoneManager; }
+    public ConfigManager getConfigManager() { return configManager; }
+    public MobScalingService getMobScalingService() { return mobScalingService; }
+    public PlayerJournalService getPlayerJournalService() { return playerJournalService; }
+    public PlayerStatsService getPlayerStatsService() { return playerStatsService; }
+    public SeasonManager getSeasonManager() { return seasonManager; }
+    public AchievementManager getAchievementManager() { return achievementManager; }
+    public MessageService getMessageService() { return messageService; }
+    public CropManager getCropManager() { return cropManager; }
+    public RecipeManager getRecipeManager() { return recipeManager; }
+    public AnimalManager getAnimalManager() { return animalManager; }
 
     /** True if the location is inside the named WorldGuard region. Always false if WorldGuard isn't installed. */
     public boolean isInsideWorldGuardRegion(Location location, String regionId) {

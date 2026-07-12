@@ -2,8 +2,10 @@ package com.ricardo.rpgmood;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -668,6 +670,9 @@ public class ZoneManager {
     private void confirmZoneChange(Player player, String currentZone) {
         UUID id = player.getUniqueId();
 
+        String previousZone = lastZones.get(id);
+        String previousDisplay = previousZone != null ? getZoneDisplayName(previousZone, player) : "The Unknown";
+
         if (!plugin.getConfigManager().getConfigValues().getBoolean("player_effects." + id, true)) {
             lastZones.put(id, currentZone);
             return;
@@ -682,9 +687,27 @@ public class ZoneManager {
         cooldowns.put(id, now);
         lastZones.put(id, currentZone);
         plugin.getPlayerStatsService().recordZoneChange(player);
+        plugin.getAchievementManager().onZoneVisited(player, currentZone);
+
+        // Fire API event
+        boolean isDynamic = currentZone.startsWith(DYNAMIC_ZONE_PREFIX);
+        String newDisplay = getZoneDisplayName(currentZone, player);
+        com.ricardo.rpgmood.api.PlayerZoneChangeEvent event = new com.ricardo.rpgmood.api.PlayerZoneChangeEvent(
+                player, previousZone, currentZone, previousDisplay, newDisplay, isDynamic);
+        Bukkit.getPluginManager().callEvent(event);
 
         boolean showTitle = shouldShowTitle(player, currentZone, now);
         sendZoneFeedback(player, currentZone, showTitle);
+    }
+
+    /** Gets the display name for a zone key, handling both configured and dynamic zones. */
+    private String getZoneDisplayName(String zoneKey, Player player) {
+        var section = plugin.getConfigManager().getZones().getConfigurationSection("zones." + zoneKey);
+        if (section != null) {
+            return org.bukkit.ChatColor.stripColor(
+                    org.bukkit.ChatColor.translateAlternateColorCodes('&', section.getString("title", zoneKey)));
+        }
+        return getDynamicZoneTitle(player, zoneKey);
     }
 
     /** Gates the big Title/Subtitle behind its own per-player opt-out and a longer "seen recently" memory than the ambient cooldown. */
@@ -822,10 +845,6 @@ public class ZoneManager {
             plugin.getPlayerJournalService().addEntry(player, "Arrived at " + legacyTitle + ChatColor.RESET + ".");
         }
 
-        Component finalFlavor = Component.text("[RPGMood] ")
-                .color(net.kyori.adventure.text.format.NamedTextColor.GRAY)
-                .append(LegacyComponentSerializer.legacyAmpersand().deserialize(flavorLine));
-
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -833,7 +852,7 @@ public class ZoneManager {
                     cancel();
                     return;
                 }
-                player.sendMessage(finalFlavor);
+                plugin.getMessageService().send(player, flavorLine);
             }
         }.runTaskLater(plugin, 20L);
     }

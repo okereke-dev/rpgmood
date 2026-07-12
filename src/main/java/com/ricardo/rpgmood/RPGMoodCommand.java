@@ -20,7 +20,7 @@ public class RPGMoodCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle [titles]|info|leaderboard").color(NamedTextColor.RED));
+            sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle [titles]|info|leaderboard [deaths|zones|level]|achievements").color(NamedTextColor.RED));
             return true;
         }
 
@@ -32,6 +32,10 @@ public class RPGMoodCommand implements CommandExecutor {
             return handleLeaderboard(sender, args);
         }
 
+        if (args[0].equalsIgnoreCase("achievements")) {
+            return handleAchievements(sender, args);
+        }
+
         if (args[0].equalsIgnoreCase("reload")) {
             if (!sender.hasPermission("rpgmood.admin")) {
                 sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(plugin.getConfig().getString("messages.no_permission", "&cNo permission")));
@@ -39,6 +43,19 @@ public class RPGMoodCommand implements CommandExecutor {
             }
             plugin.getConfigManager().reload();
             plugin.getMobScalingService().invalidateStructureCache();
+            // Reload farming data
+            if (plugin.getCropManager() != null) {
+                plugin.getCropManager().reload();
+            }
+            if (plugin.getRecipeManager() != null) {
+                plugin.getRecipeManager().reload();
+            }
+            if (plugin.getAnimalManager() != null) {
+                plugin.getAnimalManager().reload();
+            }
+            if (plugin.getAchievementManager() != null) {
+                plugin.getAchievementManager().reload();
+            }
             sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(plugin.getConfig().getString("messages.plugin_reloaded", "&aReloaded")));
             return true;
         }
@@ -53,16 +70,30 @@ public class RPGMoodCommand implements CommandExecutor {
                 return true;
             }
 
-            String configKey = args.length > 1 && args[1].equalsIgnoreCase("titles") ? "player_titles." : "player_effects.";
-            boolean enabled = !plugin.getConfigManager().getConfigValues().getBoolean(configKey + player.getUniqueId(), true);
-            plugin.getConfig().set(configKey + player.getUniqueId(), enabled);
-            // Save only the specific player toggle, not the entire config
-            plugin.getConfigManager().savePlayerToggle(configKey, player.getUniqueId(), enabled);
-            player.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(enabled ? plugin.getConfig().getString("messages.toggle_enabled", "&aEnabled") : plugin.getConfig().getString("messages.toggle_disabled", "&eDisabled")));
+            String sub = args.length > 1 ? args[1].toLowerCase() : "";
+
+            switch (sub) {
+                case "titles" -> {
+                    String configKey = "player_titles.";
+                    boolean enabled = !plugin.getConfigManager().getConfigValues().getBoolean(configKey + player.getUniqueId(), true);
+                    plugin.getConfigManager().savePlayerToggle(configKey, player.getUniqueId(), enabled);
+                    player.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(
+                            enabled ? "&a[RPGMood] Zone titles enabled." : "&e[RPGMood] Zone titles disabled."));
+                }
+                default -> {
+                    // Master toggle: zone feedback + ambient messages
+                    String configKey = "player_effects.";
+                    boolean enabled = !plugin.getConfigManager().getConfigValues().getBoolean(configKey + player.getUniqueId(), true);
+                    plugin.getConfigManager().savePlayerToggle(configKey, player.getUniqueId(), enabled);
+                    player.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(
+                            enabled ? plugin.getConfig().getString("messages.toggle_enabled", "&aEffects enabled")
+                                    : plugin.getConfig().getString("messages.toggle_disabled", "&eEffects disabled")));
+                }
+            }
             return true;
         }
 
-        sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle [titles]|info|leaderboard").color(NamedTextColor.RED));
+        sender.sendMessage(Component.text("Usage: /rpgmood reload|toggle [titles]|info|leaderboard [deaths|zones|level]|achievements").color(NamedTextColor.RED));
         return true;
     }
 
@@ -101,6 +132,37 @@ public class RPGMoodCommand implements CommandExecutor {
                     .append(Component.text(entry.name()).color(NamedTextColor.WHITE))
                     .append(Component.text(" — " + entry.value()).color(NamedTextColor.YELLOW)));
             rank++;
+        }
+        return true;
+    }
+
+    private boolean handleAchievements(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Component.text("Only players can use this command.").color(NamedTextColor.RED));
+            return true;
+        }
+        if (!player.hasPermission("rpgmood.player.achievements")) {
+            sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(plugin.getConfig().getString("messages.no_permission", "&cNo permission")));
+            return true;
+        }
+
+        AchievementManager achievements = plugin.getAchievementManager();
+        int unlockedCount = achievements.getUnlockedCount(player);
+        int total = AchievementManager.ALL_ACHIEVEMENTS.size();
+
+        player.sendMessage(Component.text("=== Achievements (" + unlockedCount + "/" + total + ") ===").color(NamedTextColor.GOLD));
+        for (AchievementManager.Achievement ach : AchievementManager.ALL_ACHIEVEMENTS) {
+            boolean unlocked = achievements.hasUnlocked(player, ach.id());
+            if (unlocked) {
+                player.sendMessage(Component.text()
+                        .append(Component.text("✅ " + ach.icon() + " ", NamedTextColor.GREEN))
+                        .append(Component.text(ach.name(), NamedTextColor.WHITE))
+                        .append(Component.text(" — " + ach.description(), NamedTextColor.GRAY)));
+            } else {
+                player.sendMessage(Component.text()
+                        .append(Component.text("⬛ " + ach.icon() + " ", NamedTextColor.DARK_GRAY))
+                        .append(Component.text(ach.name(), NamedTextColor.DARK_GRAY)));
+            }
         }
         return true;
     }

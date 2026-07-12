@@ -1,0 +1,257 @@
+# ==========================================
+#   RPGMood - Farming & Cooking Configuration
+#   Inspired by Harvest Moon NES & N64
+# ==========================================
+
+farming:
+  enabled: true
+  season_length_days: 30
+  water_radius: 5
+  water_bonus: 0.25
+  base_growth_time_minutes: 30
+
+  # Quality thresholds (0.0 - 1.0 score determines quality)
+  quality:
+    bronze_max: 0.4
+    silver_max: 0.7
+    # gold = above silver_max
+
+  # Soil fertility by biome group (0.0 - 1.0)
+  soil_fertility:
+    PLAINS: 0.5
+    FOREST: 0.6
+    DARK_FOREST: 0.7
+    TAIGA: 0.3
+    SNOWY_TAIGA: 0.2
+    JUNGLE: 0.8
+    SWAMP: 0.6
+    DESERT: 0.2
+    BADLANDS: 0.3
+    MOUNTAINS: 0.4
+    OCEAN: 0.1
+    RIVER: 0.5
+    BEACH: 0.3
+    MUSHROOM: 0.7
+    NETHER_WASTES: 0.1
+    NETHER_CRIMSON: 0.4
+    NETHER_WARPED: 0.3
+    NETHER_BASALT: 0.1
+    NETHER_SOUL: 0.2
+    END: 0.1
+
+  # Crops available per season
+  seasons:
+    spring:
+      crops:
+        - carrot
+        - potato
+        - strawberry
+    summer:
+      crops:
+        - tomato
+        - corn
+        - melon
+    autumn:
+      crops:
+        - pumpkin
+        - sweet_potato
+        - apple
+    winter:
+      crops:
+        - mushroom
+        - berry
+
+  # Crop definitions
+  crops:
+    carrot:
+      material: CARROT
+      growth_stages: 4
+      base_yield: 2
+      seed: CARROT
+      seasons: [spring, autumn]
+    potato:
+      material: POTATO
+      growth_stages: 4
+      base_yield: 3
+      seed: POTATO
+      seasons: [spring]
+    strawberry:
+      material: SWEET_BERRIES
+      growth_stages: 5
+      base_yield: 2
+      seed: SWEET_BERRIES
+      seasons: [spring, summer]
+    tomato:
+      material: TORCHFLOWER
+      growth_stages: 5
+      base_yield: 3
+      seed: TORCHFLOWER_SEEDS
+      seasons: [summer]
+    corn:
+      material: WHEAT
+      growth_stages: 6
+      base_yield: 2
+      seed: WHEAT_SEEDS
+      seasons: [summer, autumn]
+    melon:
+      material: MELON_SLICE
+      growth_stages: 5
+      base_yield: 1
+      seed: MELON_SEEDS
+      seasons: [summer]
+    pumpkin:
+      material: PUMPKIN
+      growth_stages: 5
+      base_yield: 1
+      seed: PUMPKIN_SEEDS
+      seasons: [autumn]
+    sweet_potato:
+      material: BAKED_POTATO
+      growth_stages: 5
+      base_yield: 3
+      seed: POTATO
+      seasons: [autumn]
+    apple:
+      material: APPLE
+      growth_stages: 7
+      base_yield: 2
+      seed: APPLE
+      seasons: [autumn]
+    mushroom:
+      material: BROWN_MUSHROOM
+      growth_stages: 3
+      base_yield: 2
+      seed: BROWN_MUSHROOM
+      seasons: [winter, autumn]
+    berry:
+      material: SWEET_BERRIES
+      growth_stages: 4
+      base_yield: 3
+      seed: SWEET_BERRIES
+      seasons: [winter, spring]
+
+  # Cooking recipes (discovered by combining ingredients in a crafting grid or campfire)
+  recipes:
+    hearty_stew:
+      name: "&6Hearty Stew"
+      ingredients:
+        - CARROT
+        - POTATO
+        - BROWN_MUSHROOM
+      result: MUSHROOM_STEW
+      effect: "fortified"
+      effect_duration: 60
+      min_quality: BRONZE
+      description: "A warm, filling stew that fortifies the body."
+    farmers_omelette:
+      name: "&eFarmer's Omelette"
+      ingredients:
+        - WHEAT
+        - EGG
+        - CARROT
+      result: BREAD
+      effect: "comforted"
+      effect_duration: 30
+      min_quality: SILVER
+      description: "A hearty start to any farming day."
+    adventurers_skewer:
+      name: "&cAdventurer's Skewer"
+      ingredients:
+        - COOKED_BEEF
+        - TORCHFLOWER
+        - SWEET_BERRIES
+      result: COOKED_BEEF
+      effect: "inspired"
+      effect_duration: 120
+      min_quality: GOLD
+      description: "The taste of adventure itself!"
+    harvest_cake:
+      name: "&dHarvest Cake"
+      ingredients:
+        - WHEAT
+        - SUGAR
+        - APPLE
+      result: CAKE
+      effect: "fortified"
+      effect_duration: 90
+      min_quality: SILVER
+      description: "Celebrate the bounty of the season."
+    winter_tea:
+      name: "&bWinter Tea"
+      ingredients:
+        - SWEET_BERRIES
+        - SUGAR
+        - BROWN_MUSHROOM
+      result: HONEY_BOTTLE
+      effect: "comforted"
+      effect_duration: 45
+      min_quality: BRONZE
+      description: "Warms you from the inside out."
+
+  # Mood effects granted by cooked food
+  mood_effects:
+    fortified:
+      effect: INCREASE_DAMAGE
+      amplifier: 1
+      description: "&c+20% melee damage"
+    comforted:
+      effect: REGENERATION
+      amplifier: 1
+      description: "&dRegeneration"
+    inspired:
+      effect: HEAL
+      amplifier: 2
+      description: "&b+50% XP from mob kills"
+
+  # ==========================================
+  #   RPGMood - Animal Husbandry (Harvest Moon-style)
+  # ==========================================
+  animals:
+    enabled: true
+    max_per_player: 20
+    affection:
+      max_daily_gain: 5.0
+      penalty_unfed: -2.0
+      penalty_outside_winter: -1.5
+      penalty_outside_storm: -1.0
+      penalty_sick: -3.0
+      penalty_cramped: -0.5
+    feeding:
+      grazing_check_interval_ticks: 1200
+      grazing_blocks:
+        - GRASS_BLOCK
+        - TALL_GRASS
+        - SHORT_GRASS
+        - FERN
+      hay_feeds_per_block: 5
+    products:
+      cow_milk_enabled: true
+      chicken_egg_enabled: true
+      sheep_wool_enabled: true
+      goat_milk_enabled: true
+      max_accumulated_eggs: 5
+      wool_growth_days: 3
+    sickness:
+      days_without_food_to_get_sick: 3
+      days_sick_to_die: 7
+      base_daily_chance: 0.02
+      cure_items:
+        - HONEY_BOTTLE
+        - POTION
+    purchasing:
+      cow:
+        cost:
+          WHEAT: 32
+          EMERALD: 8
+      chicken:
+        cost:
+          WHEAT_SEEDS: 8
+          EMERALD: 2
+      sheep:
+        cost:
+          WHEAT: 24
+          EMERALD: 6
+      goat:
+        cost:
+          WHEAT: 24
+          EMERALD: 6

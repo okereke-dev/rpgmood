@@ -1,5 +1,6 @@
 package com.ricardo.rpgmood;
 
+import com.ricardo.rpgmood.api.MobScaleEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -123,6 +124,14 @@ public class MobScalingService {
             return -1;
         }
 
+        // Fire MobScaleEvent — other plugins can modify or cancel scaling
+        MobScaleEvent scaleEvent = new MobScaleEvent(entity, level);
+        Bukkit.getPluginManager().callEvent(scaleEvent);
+        if (scaleEvent.isCancelled()) {
+            return -1;
+        }
+        level = scaleEvent.getLevel();
+
         double health = Math.max(10.0, 14.0 + (level - 1) * plugin.getConfig().getDouble("mob_scaling.health_per_level", 2.0));
         double damage = Math.max(0.4, 0.6 + (level - 1) * plugin.getConfig().getDouble("mob_scaling.damage_per_level", 0.12));
         double armor = Math.max(0.0, (level - 1) * plugin.getConfig().getDouble("mob_scaling.armor_per_level", 0.25));
@@ -151,10 +160,14 @@ public class MobScalingService {
 
         entity.addScoreboardTag("rpgmood_scaled");
         entity.getPersistentDataContainer().set(levelKey, PersistentDataType.INTEGER, level);
-        entity.setCustomName(ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("mob_scaling.name_format", "&cLv. {level} {name}")
+
+        // Store display name for death messages / debugging but don't show floating tag (invasive).
+        // Visual level indication is handled by MobAuraEffect (particle auras) and MobProximityTask (Action Bar).
+        String displayName = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("mob_scaling.name_format", "&cLv. {level} {name}")
                 .replace("{level}", String.valueOf(level))
-                .replace("{name}", entity.getName())));
-        entity.setCustomNameVisible(true);
+                .replace("{name}", entity.getName()));
+        entity.setCustomName(displayName);
+        entity.setCustomNameVisible(plugin.getConfig().getBoolean("mob_scaling.show_name_tags", false));
         return level;
     }
 
@@ -244,33 +257,37 @@ public class MobScalingService {
     }
 
     private int scanStructureBonus(Location location, ConfigurationSection section) {
+        long startTime = System.nanoTime();
+        final long TIMEOUT_NANOS = 100_000L; // 100 microseconds max per scan
+
         for (String key : section.getKeys(false)) {
-            if (key == null || key.isBlank()) {
-                continue;
+            if (key == null || key.isBlank()) continue;
+
+            // Timeout: if we've spent too long, skip structure bonus
+            if (System.nanoTime() - startTime > TIMEOUT_NANOS) {
+                return 0;
             }
+
             String normalizedKey = key.toLowerCase(Locale.ROOT).trim();
-            if (normalizedKey.isBlank()) {
-                continue;
-            }
+            if (normalizedKey.isBlank()) continue;
+
             NamespacedKey namespacedKey;
             try {
                 namespacedKey = NamespacedKey.fromString("minecraft:" + normalizedKey);
             } catch (IllegalArgumentException ex) {
                 continue;
             }
-            var registry = Bukkit.getRegistry(StructureType.class);
-            if (registry == null) {
-                continue;
-            }
-            StructureType structureType = registry.get(namespacedKey);
-            if (structureType != null) {
-                try {
-                    if (location.getWorld().locateNearestStructure(location, structureType, 64, false) != null) {
-                        return section.getInt(key, 0);
-                    }
-                } catch (Exception ex) {
-                    // Structure lookup failed (e.g. world not fully generated) — silently skip
+
+            try {
+                var registry = Bukkit.getRegistry(StructureType.class);
+                if (registry == null) continue;
+                StructureType structureType = registry.get(namespacedKey);
+                if (structureType == null) continue;
+                if (location.getWorld().locateNearestStructure(location, structureType, 64, false) != null) {
+                    return section.getInt(key, 0);
                 }
+            } catch (Exception ex) {
+                // Structure lookup failed — skip silently
             }
         }
         return 0;

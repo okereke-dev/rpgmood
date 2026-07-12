@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.2.0] — 2026-07-12
+
+### Added
+- **Public API for developers** — `PlayerZoneChangeEvent`, `MobScaleEvent`, `PlayerDeathMessageEvent`, `PlayerCropHarvestEvent` (`com.ricardo.rpgmood.api`), so other plugins (e.g. loot plugins) can hook into RPGMood without a hard dependency
+- **bStats metrics** — registered with a real plugin ID
+- **Mob level particle auras** (`MobAuraEffect`) — subtle, level-tiered coloured particles around scaled mobs (blue/yellow/orange/red as level increases), only rendered for mobs near a player
+- **Achievement system** — 15 achievements across exploration, combat, farming, and survival (`AchievementManager`), persisted to `achievements.yml`; `/rpgmood achievements` shows unlocked/locked progress
+- **Action-bar ambient messages** (`MessageService`) — ambient/zone/achievement messages now default to the action bar instead of chat, with a per-player toggle
+- **Harvest Moon-style farming module** (`com.ricardo.rpgmood.farming`):
+  - Crop quality (Bronze/Silver/Gold) based on soil fertility, nearby water, weather, and zone danger
+  - Four-season cycle (Spring/Summer/Autumn/Winter, 30 MC days each) affecting growth rate and available crops
+  - Cooking & recipe discovery — recipes are learned by experimenting in a crafting table and grant temporary "Mood" buffs (Fortified, Comforted, Inspired, Agotado)
+  - Animal husbandry — buy, name, feed, and collect products from cows/chickens/sheep/goats (`/rpgmood-farm animal buy|list|info`)
+  - `/rpgmood-farm season|crops|recipes [all]|animal` command
+  - Recipe discovery now persists to `recipes.yml` across restarts
+
+### Fixed
+- **`MessageService.toggle()` rewriting the whole config** — now delegates to `ConfigManager.savePlayerToggle()` like the rest of the player toggles, instead of calling `saveConfig()` directly
+
 ## [1.1.1] — 2026-07-11
 
 ### Fixed
