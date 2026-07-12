@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0] — 2026-07-12
+
+### Changed
+- **Animals are no longer purchased** — `/rpgmood-farm animal buy` is gone. Instead, feed a wild cow/chicken/sheep/goat its normal vanilla breeding food (wheat, wheat seeds) and it's yours, the same interaction vanilla already uses for love mode. Nothing about that interaction is altered or cancelled — hearts, item consumption, and actual breeding (if a mate's nearby) all still happen exactly as vanilla intends; RPGMood just also registers the animal to whoever fed it and marks it persistent so it won't despawn.
+- **Breeding grows the herd** — a newborn animal is automatically claimed by its parents' shared owner (or the owned parent's owner, if the other parent was wild). Parents with different owners, or two wild parents, leave the baby unclaimed.
+- Claimed animals (befriended or bred) get no visible name tag or floating nameplate — `AnimalData.name` is auto-generated (`"<Type> #N"`) for messages only, nothing renders in the world. `/rpgmood-farm animal list` and looking at one with a stick are how you check what's yours.
+- `farming.animals.purchasing` (per-type item costs) is gone from `farming.yml` — there's no economy left to configure.
+
 ## [1.3.1] — 2026-07-12
 
 ### Fixed

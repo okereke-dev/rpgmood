@@ -224,8 +224,8 @@ public class AchievementManager {
         }
     }
 
-    /** Called when a player buys an animal. Tracks distinct animal types owned for noahs_ark. */
-    public void onAnimalPurchased(Player player, AnimalType type) {
+    /** Called when a player claims (befriends or breeds) an animal. Tracks distinct animal types owned for noahs_ark. */
+    public void onAnimalClaimed(Player player, AnimalType type) {
         List<String> owned = addToProgressSet(player, "animal_types_owned", type.name());
         if (owned.size() >= AnimalType.values().length) {
             unlock(player, "noahs_ark");

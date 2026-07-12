@@ -4,6 +4,21 @@
 
 ---
 
+## ✅ v1.4.0 — Animales 100% vanilla, sin tienda (Completado)
+
+- Se eliminó `/rpgmood-farm animal buy` y toda la economía de compra
+  (`farming.animals.purchasing`)
+- Alimentar a un animal salvaje con su comida de cría vanilla (trigo/semillas) lo reclama en
+  el momento — mismo trigger que el modo amor vanilla, sin tocarlo ni cancelarlo
+- Las crías heredan el dueño de sus padres cuando comparten dueño (o adoptan el dueño del
+  padre que sí es propio, si el otro era salvaje)
+- Sin name tags ni carteles flotantes — los animales reclamados quedan `persistent` para no
+  despawnear, pero visualmente no cambian nada
+
+Ver `CHANGELOG.md` para el detalle completo.
+
+---
+
 ## ✅ v1.3.1 — Auditoría de zonas/action bar (Completado)
 
 - Entrada a zona ya no usa action bar — `subtitle` + `flavor_texts` se fusionan en un pool

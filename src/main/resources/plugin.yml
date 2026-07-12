@@ -1,5 +1,5 @@
 name: RPGMood
-version: 1.3.1
+version: 1.4.0
 main: com.ricardo.rpgmood.RPGMoodPlugin
 api-version: '1.20'
 author: Ricardo
@@ -15,7 +15,7 @@ commands:
     permission: rpgmood.player.diary
   rpgmood-farm:
     description: RPGMood farming commands
-    usage: /rpgmood-farm <season|crops|recipes [all]|animal buy|list|info>
+    usage: /rpgmood-farm <season|crops|recipes [all]|animal list|info>
     permission: rpgmood.player.farming
 permissions:
   rpgmood.admin:

@@ -34,6 +34,11 @@ public enum AnimalType {
     public Material getFavoriteFood() { return favoriteFood; }
     public String getIdealSeasons() { return idealSeasons; }
 
-    /** Returns the cost configuration key for purchasing this animal. */
-    public String getCostKey() { return name().toLowerCase(); }
+    /** Reverse lookup: which tracked AnimalType (if any) a wild entity's type corresponds to. */
+    public static AnimalType fromEntityType(EntityType entityType) {
+        for (AnimalType type : values()) {
+            if (type.entityType == entityType) return type;
+        }
+        return null;
+    }
 }

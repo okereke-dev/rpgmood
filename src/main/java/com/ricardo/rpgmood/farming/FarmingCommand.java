@@ -3,20 +3,15 @@ package com.ricardo.rpgmood.farming;
 import com.ricardo.rpgmood.RPGMoodPlugin;
 import com.ricardo.rpgmood.farming.animal.AnimalData;
 import com.ricardo.rpgmood.farming.animal.AnimalManager;
-import com.ricardo.rpgmood.farming.animal.AnimalType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Handles /rpgmood-farm subcommands: season, crops, recipes, animal.
@@ -59,8 +54,6 @@ public class FarmingCommand implements CommandExecutor {
                 .append(Component.text(" — List seasonal crops").color(NamedTextColor.WHITE)));
         player.sendMessage(Component.text("/rpgmood-farm recipes").color(NamedTextColor.GRAY)
                 .append(Component.text(" — Show recipes").color(NamedTextColor.WHITE)));
-        player.sendMessage(Component.text("/rpgmood-farm animal buy <tipo> [nombre]").color(NamedTextColor.GRAY)
-                .append(Component.text(" — Buy an animal").color(NamedTextColor.WHITE)));
         player.sendMessage(Component.text("/rpgmood-farm animal list").color(NamedTextColor.GRAY)
                 .append(Component.text(" — List your animals").color(NamedTextColor.WHITE)));
         player.sendMessage(Component.text("/rpgmood-farm animal info").color(NamedTextColor.GRAY)
@@ -109,11 +102,11 @@ public class FarmingCommand implements CommandExecutor {
             CropManager.CropDefinition def = plugin.getCropManager().getCropDefinitions().get(cropKey);
             if (def != null) {
                 player.sendMessage(Component.text()
-                        .append(Component.text(" \u2022 ", NamedTextColor.GRAY))
+                        .append(Component.text(" • ", NamedTextColor.GRAY))
                         .append(Component.text(cropKey.substring(0, 1).toUpperCase() + cropKey.substring(1), NamedTextColor.WHITE))
                         .append(Component.text(" (" + def.material().name() + ")", NamedTextColor.DARK_GRAY)));
             } else {
-                player.sendMessage(Component.text(" \u2022 " + cropKey, NamedTextColor.WHITE));
+                player.sendMessage(Component.text(" • " + cropKey, NamedTextColor.WHITE));
             }
         }
     }
@@ -134,7 +127,7 @@ public class FarmingCommand implements CommandExecutor {
             for (Recipe recipe : all) {
                 boolean discovered = rm.hasDiscovered(player, recipe.id());
                 player.sendMessage(Component.text()
-                        .append(Component.text(discovered ? "\u2705 " : "\u2B1B ", NamedTextColor.GRAY))
+                        .append(Component.text(discovered ? "✅ " : "⬛ ", NamedTextColor.GRAY))
                         .append(LegacyComponentSerializer.legacyAmpersand().deserialize(recipe.name()))
                         .append(Component.text(" [" + recipe.effect() + "]", NamedTextColor.DARK_GRAY)));
             }
@@ -150,9 +143,9 @@ public class FarmingCommand implements CommandExecutor {
                 Recipe recipe = rm.getRecipe(id);
                 if (recipe != null) {
                     player.sendMessage(Component.text()
-                            .append(Component.text(" \u2705 ", NamedTextColor.GREEN))
+                            .append(Component.text(" ✅ ", NamedTextColor.GREEN))
                             .append(LegacyComponentSerializer.legacyAmpersand().deserialize(recipe.name()))
-                            .append(Component.text(" \u2192 ", NamedTextColor.DARK_GRAY))
+                            .append(Component.text(" → ", NamedTextColor.DARK_GRAY))
                             .append(Component.text(recipe.description(), NamedTextColor.GRAY)));
                 }
             }
@@ -165,88 +158,15 @@ public class FarmingCommand implements CommandExecutor {
 
     private void handleAnimal(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage(Component.text("Usage: /rpgmood-farm animal buy|list|info").color(NamedTextColor.RED));
+            player.sendMessage(Component.text("Usage: /rpgmood-farm animal list|info").color(NamedTextColor.RED));
             return;
         }
 
         switch (args[1].toLowerCase()) {
-            case "buy" -> handleAnimalBuy(player, args);
             case "list" -> handleAnimalList(player);
             case "info" -> handleAnimalInfo(player);
-            default -> player.sendMessage(Component.text("Unknown subcommand. Use: buy, list, info").color(NamedTextColor.RED));
+            default -> player.sendMessage(Component.text("Unknown subcommand. Use: list, info").color(NamedTextColor.RED));
         }
-    }
-
-    private void handleAnimalBuy(Player player, String[] args) {
-        if (args.length < 3) {
-            player.sendMessage(Component.text("Usage: /rpgmood-farm animal buy <type> [name]").color(NamedTextColor.RED));
-            player.sendMessage(Component.text("Types: cow, chicken, sheep, goat").color(NamedTextColor.GRAY));
-            return;
-        }
-
-        // Find animal type
-        AnimalType type;
-        try {
-            type = AnimalType.valueOf(args[2].toUpperCase());
-        } catch (IllegalArgumentException e) {
-            player.sendMessage(Component.text("Unknown animal type: " + args[2]).color(NamedTextColor.RED));
-            player.sendMessage(Component.text("Types: cow, chicken, sheep, goat").color(NamedTextColor.GRAY));
-            return;
-        }
-
-        // Check if animals module is enabled
-        if (!plugin.getConfig().getBoolean("farming.animals.enabled", true)) {
-            player.sendMessage(Component.text("Animals are disabled in config.").color(NamedTextColor.RED));
-            return;
-        }
-
-        // Calculate cost
-        String costPath = "farming.animals.purchasing." + type.getCostKey() + ".cost";
-        ConfigurationSection costSection = plugin.getConfig().getConfigurationSection(costPath);
-        if (costSection == null) {
-            player.sendMessage(Component.text("Animal cost not configured.").color(NamedTextColor.RED));
-            return;
-        }
-
-        // Check if player has enough items
-        for (String materialKey : costSection.getKeys(false)) {
-            Material mat = Material.getMaterial(materialKey);
-            int amount = costSection.getInt(materialKey);
-            if (mat != null && !player.getInventory().containsAtLeast(new ItemStack(mat), amount)) {
-                player.sendMessage(Component.text("You need " + amount + "x " + mat.name().toLowerCase()
-                        + " to buy a " + type.getDisplayName()).color(NamedTextColor.RED));
-                return;
-            }
-        }
-
-        // Remove items from inventory
-        for (String materialKey : costSection.getKeys(false)) {
-            Material mat = Material.getMaterial(materialKey);
-            int amount = costSection.getInt(materialKey);
-            if (mat != null) {
-                player.getInventory().removeItem(new ItemStack(mat, amount));
-            }
-        }
-
-        // Spawn the animal
-        String animalName = args.length > 3 ? args[3] : type.getDisplayName() + " #" + (int)(Math.random() * 1000);
-        org.bukkit.entity.Entity entity = player.getWorld().spawnEntity(player.getLocation(), type.getEntityType());
-        entity.setCustomName(animalName);
-        entity.setCustomNameVisible(true);
-
-        // Register in the system
-        AnimalManager manager = plugin.getAnimalManager();
-        manager.registerAnimal(entity.getUniqueId(), type, player.getUniqueId(), animalName);
-        plugin.getAchievementManager().onAnimalPurchased(player, type);
-
-        player.sendMessage(Component.text()
-                .append(Component.text("\u2705 Purchased ", NamedTextColor.GREEN))
-                .append(Component.text(animalName, NamedTextColor.WHITE))
-                .append(Component.text(" the " + type.getDisplayName() + "!", NamedTextColor.GREEN))
-                .build());
-
-        plugin.getPlayerJournalService().addEntry(player,
-                "Purchased " + animalName + " the " + type.getDisplayName());
     }
 
     private void handleAnimalList(Player player) {
@@ -255,7 +175,7 @@ public class FarmingCommand implements CommandExecutor {
 
         if (animals.isEmpty()) {
             player.sendMessage(Component.text("You don't own any animals yet.").color(NamedTextColor.GRAY));
-            player.sendMessage(Component.text("Buy one with /rpgmood-farm animal buy <type>").color(NamedTextColor.GRAY));
+            player.sendMessage(Component.text("Find a wild cow/chicken/sheep/goat and feed it its favorite food to befriend it!").color(NamedTextColor.GRAY));
             return;
         }
 
@@ -264,11 +184,11 @@ public class FarmingCommand implements CommandExecutor {
             int hearts = animal.getHeartLevel();
             String heartDisplay = "❤️".repeat(hearts) + "♡".repeat(5 - hearts);
             player.sendMessage(Component.text()
-                    .append(Component.text(" \u2022 ", NamedTextColor.GRAY))
+                    .append(Component.text(" • ", NamedTextColor.GRAY))
                     .append(Component.text(animal.getName(), NamedTextColor.WHITE))
                     .append(Component.text(" the " + animal.getType().getDisplayName(), NamedTextColor.GRAY))
                     .append(Component.text(" " + heartDisplay, NamedTextColor.RED))
-                    .append(Component.text(animal.isSick() ? " \u2620 Sick" : " \u2714 Healthy",
+                    .append(Component.text(animal.isSick() ? " ☠ Sick" : " ✔ Healthy",
                             animal.isSick() ? NamedTextColor.RED : NamedTextColor.GREEN))
                     .build());
         }

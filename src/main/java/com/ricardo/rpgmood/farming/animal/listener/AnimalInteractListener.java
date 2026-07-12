@@ -47,7 +47,10 @@ public class AnimalInteractListener implements Listener {
         if (manager == null) return;
 
         AnimalData animal = manager.getAnimal(entity.getUniqueId());
-        if (animal == null) return;
+        if (animal == null) {
+            attemptBefriend(entity, player, manager);
+            return;
+        }
 
         // Check ownership
         if (!animal.getOwnerId().equals(player.getUniqueId())) {
@@ -83,6 +86,41 @@ public class AnimalInteractListener implements Listener {
             handleInfo(player, animal);
             event.setCancelled(true);
         }
+    }
+
+    // -- Befriending wild animals --
+
+    /**
+     * A wild animal fed its vanilla breeding food becomes the feeder's — same interaction
+     * vanilla already uses for love mode, not cancelled or altered in any way. One feed, no
+     * cooldown, no separate item: the vanilla trigger IS the claim.
+     */
+    private void attemptBefriend(Entity entity, Player player, AnimalManager manager) {
+        AnimalType type = AnimalType.fromEntityType(entity.getType());
+        if (type == null) return;
+
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand.getType() != type.getFavoriteFood()) return;
+
+        if (!plugin.getConfig().getBoolean("farming.animals.enabled", true)) return;
+
+        int maxPerPlayer = plugin.getConfig().getInt("farming.animals.max_per_player", 20);
+        List<AnimalData> owned = manager.getOwnedAnimals(player.getUniqueId());
+        if (owned.size() >= maxPerPlayer) {
+            plugin.getMessageService().send(player, Component.text("You already have the maximum number of animals (" + maxPerPlayer + ").").color(NamedTextColor.RED));
+            return;
+        }
+
+        entity.setPersistent(true);
+        String name = type.getDisplayName() + " #" + (owned.size() + 1);
+        manager.registerAnimal(entity.getUniqueId(), type, player.getUniqueId(), name);
+        plugin.getAchievementManager().onAnimalClaimed(player, type);
+
+        plugin.getMessageService().send(player, Component.text()
+                .append(Component.text("🐾 The " + type.getDisplayName() + " trusts you", NamedTextColor.GREEN))
+                .append(Component.text(" — it's yours now!", NamedTextColor.GREEN))
+                .build());
+        plugin.getPlayerJournalService().addEntry(player, "Befriended a wild " + type.getDisplayName() + "!");
     }
 
     // -- Petting --
