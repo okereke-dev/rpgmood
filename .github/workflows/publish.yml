@@ -34,7 +34,10 @@ jobs:
           JWT=$(echo "$AUTH_RESPONSE" | jq -r '.token')
           echo "JWT prefix: ${JWT:0:20}..."
 
-          DATA=$(jq -n \
+          # Written to a file and referenced via -F versionUpload=@file rather than inlined,
+          # so curl's own -F syntax (which treats ";" as a field-metadata separator) can't
+          # be broken by punctuation in the release notes.
+          jq -n \
             --arg version "$RELEASE_TAG" \
             --arg changelog "$RELEASE_BODY" \
             '{
@@ -46,13 +49,13 @@ jobs:
               description: $changelog,
               files: [{ fileInfo: null, externalUrl: null, platforms: ["PAPER"] }],
               channel: "Release"
-            }')
+            }' > hangar-payload.json
 
           UPLOAD_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
             "https://hangar.papermc.io/api/v1/projects/okereke-dev/RPGMood/upload" \
             -H "Authorization: HangarAuth $JWT" \
             -H "User-Agent: rpgmood-ci" \
-            -F "versionUpload=$DATA;type=application/json" \
+            -F "versionUpload=@hangar-payload.json;type=application/json" \
             -F "files=@target/rpgmood.jar;type=application/java-archive")
           echo "Upload response: $UPLOAD_RESPONSE"
           HTTP_STATUS=$(echo "$UPLOAD_RESPONSE" | grep "HTTP_STATUS" | cut -d: -f2)
