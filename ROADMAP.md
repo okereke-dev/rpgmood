@@ -4,6 +4,22 @@
 
 ---
 
+## ✅ v1.3.0 — Más logros + integración RPGLoot (Completado)
+
+- **16 logros nuevos** (15 → 31), agrupados en categorías (Exploración/Combate/Supervivencia/
+  Farming/Loot) mostradas en `/rpgmood achievements`
+- **Integración con RPGLoot** — 6 logros nuevos leen las tags PDC públicas de RPGLoot
+  (rareza, artefactos, sets) sin dependencia Maven en ningún sentido, mismo patrón que ya
+  usa RPGLoot para leer `rpgmood:level`. RPGLoot también se tocó (aditivo, sin romper nada):
+  expone si un jugador tiene un set completo activo (`rpgloot:active_set_rarity`) y trackea
+  artefactos distintos encontrados (`playerstats.yml`)
+- Fix: `seasons_first`/`four_seasons` no se disparaban nunca (gap heredado de v1.2.0); y
+  `/rpgmood achievements` ya no depende del orden no especificado de `Set.of()`
+
+Ver `CHANGELOG.md` para el detalle completo.
+
+---
+
 ## ✅ v1.2.0 — Feature Release (Completado)
 
 - **API pública para desarrolladores** — `PlayerZoneChangeEvent`, `MobScaleEvent`, `PlayerDeathMessageEvent`, `PlayerCropHarvestEvent`
@@ -110,6 +126,7 @@ Todos los bugs corregidos:
 | Bosses regionales | Mobs especiales que spawnan al matar suficientes en un área |
 | Mapa/zona visualization | Partículas en bordes de zona o integración con Dynmap/BlueMap |
 | Facciones | Integración con FactionsUUID para territorios y bonus |
+| Integración RPGLoot bidireccional | Hoy RPGMood lee tags de RPGLoot; a futuro RPGLoot podría leer logros de RPGMood (ej. +luck/rareza por tener "Slayer Legend") — mismo patrón PDC, sin dependencia nueva |
 
 ---
 

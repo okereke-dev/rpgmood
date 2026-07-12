@@ -170,7 +170,7 @@ public class CropManager {
                     "§e\u2728 Harvested Gold-quality " + def.id() + "!");
         }
 
-        plugin.getAchievementManager().onCropHarvested(player, quality);
+        plugin.getAchievementManager().onCropHarvested(player, def.id(), quality);
 
         return event.getDrops();
     }

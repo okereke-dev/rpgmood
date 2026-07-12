@@ -72,6 +72,8 @@ public class RPGMoodPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new CropListener(this), this);
         Bukkit.getPluginManager().registerEvents(new CookingListener(this), this);
         Bukkit.getPluginManager().registerEvents(new AnimalInteractListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new LightningListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new RPGLootAchievementListener(this), this);
 
         new AmbientTask(this).runTaskTimer(this, 0L, 20L);
         new MobAuraEffect(this).runTaskTimer(this, 0L, 20L);

@@ -9,6 +9,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+
 public class RPGMoodCommand implements CommandExecutor {
 
     private final RPGMoodPlugin plugin;
@@ -151,20 +153,36 @@ public class RPGMoodCommand implements CommandExecutor {
         int total = AchievementManager.ALL_ACHIEVEMENTS.size();
 
         player.sendMessage(Component.text("=== Achievements (" + unlockedCount + "/" + total + ") ===").color(NamedTextColor.GOLD));
-        for (AchievementManager.Achievement ach : AchievementManager.ALL_ACHIEVEMENTS) {
-            boolean unlocked = achievements.hasUnlocked(player, ach.id());
-            if (unlocked) {
-                player.sendMessage(Component.text()
-                        .append(Component.text("✅ " + ach.icon() + " ", NamedTextColor.GREEN))
-                        .append(Component.text(ach.name(), NamedTextColor.WHITE))
-                        .append(Component.text(" — " + ach.description(), NamedTextColor.GRAY)));
-            } else {
-                player.sendMessage(Component.text()
-                        .append(Component.text("⬛ " + ach.icon() + " ", NamedTextColor.DARK_GRAY))
-                        .append(Component.text(ach.name(), NamedTextColor.DARK_GRAY)));
+        for (AchievementManager.Category category : AchievementManager.Category.values()) {
+            List<AchievementManager.Achievement> inCategory = AchievementManager.ALL_ACHIEVEMENTS.stream()
+                    .filter(a -> a.category() == category)
+                    .toList();
+            if (inCategory.isEmpty()) continue;
+
+            int categoryUnlocked = (int) inCategory.stream().filter(a -> achievements.hasUnlocked(player, a.id())).count();
+            player.sendMessage(Component.text("-- " + capitalize(category.name()) + " (" + categoryUnlocked + "/" + inCategory.size() + ") --")
+                    .color(NamedTextColor.YELLOW));
+
+            for (AchievementManager.Achievement ach : inCategory) {
+                boolean unlocked = achievements.hasUnlocked(player, ach.id());
+                if (unlocked) {
+                    player.sendMessage(Component.text()
+                            .append(Component.text("✅ " + ach.icon() + " ", NamedTextColor.GREEN))
+                            .append(Component.text(ach.name(), NamedTextColor.WHITE))
+                            .append(Component.text(" — " + ach.description(), NamedTextColor.GRAY)));
+                } else {
+                    player.sendMessage(Component.text()
+                            .append(Component.text("⬛ " + ach.icon() + " ", NamedTextColor.DARK_GRAY))
+                            .append(Component.text(ach.name(), NamedTextColor.DARK_GRAY)));
+                }
             }
         }
         return true;
+    }
+
+    private static String capitalize(String enumName) {
+        String lower = enumName.toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
+        return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
     }
 
     /** Admin/debug view of the zone and mob difficulty at the sender's current location. */

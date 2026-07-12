@@ -57,6 +57,7 @@ public class DeathMessageListener implements Listener {
 
         String causeKey = detectCause(event);
         String biomeKey = player.getLocation().getBlock().getBiome().name().toLowerCase(Locale.ROOT);
+        plugin.getAchievementManager().onPlayerDeathInBiome(player, biomeKey);
         String locationName = resolveLocationName(player);
         String killerKey = detectKiller(event);
         Entity killerEntity = event.getEntity().getKiller();

@@ -237,6 +237,7 @@ public class FarmingCommand implements CommandExecutor {
         // Register in the system
         AnimalManager manager = plugin.getAnimalManager();
         manager.registerAnimal(entity.getUniqueId(), type, player.getUniqueId(), animalName);
+        plugin.getAchievementManager().onAnimalPurchased(player, type);
 
         player.sendMessage(Component.text()
                 .append(Component.text("\u2705 Purchased ", NamedTextColor.GREEN))

@@ -98,6 +98,9 @@ public class AnimalInteractListener implements Listener {
         animal.setLastInteractionDay(today);
         animal.setAffection(animal.getAffection() + 1.0);
         manager.saveAnimal(animal);
+        if (animal.getHeartLevel() >= 5) {
+            plugin.getAchievementManager().onAnimalMaxAffection(player);
+        }
 
         player.sendActionBar(Component.text()
                 .append(Component.text("\uD83D\uDC4B You pet ", NamedTextColor.GREEN))
@@ -126,6 +129,9 @@ public class AnimalInteractListener implements Listener {
         animal.setLastInteractionDay(today);
         animal.setAffection(animal.getAffection() + 2.0);
         manager.saveAnimal(animal);
+        if (animal.getHeartLevel() >= 5) {
+            plugin.getAchievementManager().onAnimalMaxAffection(player);
+        }
 
         player.sendActionBar(Component.text()
                 .append(Component.text("\uD83E\uDDFB Brushed ", NamedTextColor.AQUA))
@@ -190,6 +196,9 @@ public class AnimalInteractListener implements Listener {
         }
 
         manager.saveAnimal(animal);
+        if (animal.getHeartLevel() >= 5) {
+            plugin.getAchievementManager().onAnimalMaxAffection(player);
+        }
 
         plugin.getPlayerJournalService().addEntry(player,
                 "Milked " + animal.getName() + " (" + quality.getDisplayName() + " quality)");
@@ -238,6 +247,9 @@ public class AnimalInteractListener implements Listener {
         }
 
         manager.saveAnimal(animal);
+        if (animal.getHeartLevel() >= 5) {
+            plugin.getAchievementManager().onAnimalMaxAffection(player);
+        }
 
         player.sendActionBar(Component.text()
                 .append(Component.text("\uD83D\uDC11 Sheared ", NamedTextColor.WHITE))
@@ -269,6 +281,9 @@ public class AnimalInteractListener implements Listener {
         }
 
         manager.saveAnimal(animal);
+        if (animal.getHeartLevel() >= 5) {
+            plugin.getAchievementManager().onAnimalMaxAffection(player);
+        }
 
         player.sendActionBar(Component.text()
                 .append(Component.text("\uD83C\uDF3E Fed ", NamedTextColor.GREEN))

@@ -71,6 +71,7 @@ public class SeasonManager {
             Bukkit.broadcastMessage("§6[Seasons] " + currentSeason.getIcon()
                     + " §e" + currentSeason.getDisplayName() + " has arrived! "
                     + currentSeason.getDescription());
+            plugin.getAchievementManager().onSeasonChanged(currentSeason);
         }
 
         data.set(SEASON_PATH, currentSeason.name());

@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3.0] — 2026-07-12
+
+### Added
+- **16 new achievements** (15 → 31 total), grouped into a new `Category` (Exploration/Combat/Survival/Farming/Loot) shown in `/rpgmood achievements`:
+  - Exploration: Cartographer (discover every configured zone)
+  - Combat: Untouchable (damage-free kill), Godslayer (kill all 4 major bosses), Overkill (level 30+ kill that drops a Legendary RPGLoot item)
+  - Survival: Storm Chaser (survive a lightning strike), Death Tourist (die in 8 biomes)
+  - Farming: Four Seasons, Noah's Ark, Beloved, Green Thumb
+  - Loot: Legendary Hunter, Relic Bearer, Godslayer's Arsenal, Matching Set, Head to Toe, Dressed to Kill
+- **RPGLoot integration** — six new Loot achievements read RPGLoot's item/player `PersistentDataContainer` tags directly (no Maven dependency either way, same soft-integration convention RPGLoot already uses to read `rpgmood:level`). New `RPGLootIntegration` and `RPGLootAchievementListener`.
+- `SeasonManager`'s season-change broadcast now actually unlocks `seasons_first`/`four_seasons` — it never did before (a gap from 1.2.0: the achievement was defined but never wired to the season-change event).
+
+### Fixed
+- `AchievementManager.ALL_ACHIEVEMENTS` was a `Set.of(...)`, so `/rpgmood achievements` rendered in unspecified (JVM-dependent) order. Switched to an ordered `List`.
+
 ## [1.2.0] — 2026-07-12
 
 ### Added
