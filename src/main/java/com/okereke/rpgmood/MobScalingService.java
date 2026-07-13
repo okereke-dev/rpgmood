@@ -132,19 +132,25 @@ public class MobScalingService {
         }
         level = scaleEvent.getLevel();
 
-        double health = Math.max(10.0, 14.0 + (level - 1) * plugin.getConfig().getDouble("mob_scaling.health_per_level", 2.0));
-        double damage = Math.max(0.4, 0.6 + (level - 1) * plugin.getConfig().getDouble("mob_scaling.damage_per_level", 0.12));
+        double statMultiplier = calculateStatMultiplier(level,
+                plugin.getConfig().getDouble("mob_scaling.early_game_fraction", 0.85),
+                plugin.getConfig().getInt("mob_scaling.parity_level", 8));
         double armor = Math.max(0.0, (level - 1) * plugin.getConfig().getDouble("mob_scaling.armor_per_level", 0.25));
         double speedBonus = Math.max(0.0, (level - 1) * plugin.getConfig().getDouble("mob_scaling.speed_per_level", 0.0015));
 
+        // Multiplier is relative to each mob's own vanilla baseline (getDefaultValue()), not a
+        // flat constant — an Enderman scales off its own 40 HP, a Zombie off its own 20, etc.
+        // Health and damage share the same curve so a scaled mob doesn't end up tanky-but-weak.
         AttributeInstance maxHealth = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (maxHealth != null) {
+            double health = Math.max(4.0, maxHealth.getDefaultValue() * statMultiplier);
             maxHealth.setBaseValue(health);
             entity.setHealth(Math.min(entity.getHealth(), health));
         }
 
         AttributeInstance damageAttribute = entity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
         if (damageAttribute != null) {
+            double damage = Math.max(0.1, damageAttribute.getDefaultValue() * statMultiplier);
             damageAttribute.setBaseValue(damage);
         }
 
@@ -209,6 +215,17 @@ public class MobScalingService {
         int adjustedBase = Math.max(0, baseLevel - 2);
         int total = adjustedBase + Math.max(0, radialLevel - 1) + biomeBonus + structureBonus + nearbyPlayers * playerBonusPerPlayer;
         return Math.max(1, Math.min(maxLevel, total));
+    }
+
+    /**
+     * Fraction of a mob's own vanilla stat it gets at this level — shared by health and damage
+     * so both stay in lockstep instead of drifting to different "parity" levels. At level 1,
+     * the mob is at {@code earlyGameFraction} of vanilla; at {@code parityLevel}, exactly 1.0
+     * (vanilla-equivalent); beyond that it keeps climbing at the same linear rate.
+     */
+    public static double calculateStatMultiplier(int level, double earlyGameFraction, int parityLevel) {
+        double perLevelGrowth = (1.0 - earlyGameFraction) / Math.max(1, parityLevel - 1);
+        return earlyGameFraction + (level - 1) * perLevelGrowth;
     }
 
     public int getBaseLevel(EntityType type) {

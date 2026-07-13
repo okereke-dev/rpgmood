@@ -32,8 +32,13 @@ mob_scaling:
   enabled: true
   hostile-only: true
   max-level: 40
-  health_per_level: 2.0
-  damage_per_level: 0.12
+  # Health and damage are both scaled as a fraction of each mob's OWN vanilla stat (an
+  # Enderman scales off its own base health, a Zombie off its own — not a flat number shared
+  # by every mob type). At level 1, a mob is at early_game_fraction of vanilla in both health
+  # and damage together; at parity_level, it's exactly vanilla-equivalent; beyond that it keeps
+  # climbing at the same rate.
+  early_game_fraction: 0.85
+  parity_level: 8
   armor_per_level: 0.25
   speed_per_level: 0.0015
   radius:

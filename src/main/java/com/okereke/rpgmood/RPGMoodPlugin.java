@@ -45,15 +45,15 @@ public class RPGMoodPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        saveDefaultConfig();
 
         if (Bukkit.getPluginManager().getPlugin("WorldGuard") != null) {
             worldGuardActive = true;
             getLogger().info("WorldGuard found — WORLDGUARD zone type enabled.");
         }
-        saveResource("zones.yml", false);
-        saveResource("triggers.yml", false);
-        saveResource("farming.yml", false);
+        // config.yml/zones.yml/triggers.yml are merged (new keys added, existing values kept)
+        // inside ConfigManager's constructor via reload(). farming.yml has no owning manager
+        // class, so it's merged here directly.
+        ConfigMerge.mergeAndSave(this, "farming.yml");
 
         this.configManager = new ConfigManager(this);
         this.zoneManager = new ZoneManager(this);

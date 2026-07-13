@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0] — 2026-07-13
+
+### Added
+- **Config files now auto-merge new keys on startup/reload** instead of only writing a default file when it's entirely missing. `config.yml`, `zones.yml`, `triggers.yml`, and `farming.yml` all gain any keys added by a newer plugin version automatically, without touching anything you've already customized. (New `ConfigMerge` utility, uses Bukkit's own `setDefaults`/`copyDefaults` mechanism.) Trade-off: the first merge of a given file strips its comments (values are all preserved exactly, comments are not — a `YamlConfiguration` limitation).
+
+### Changed
+- **Mob scaling curve reworked to be even and per-species-aware.** Previously health, damage, and armor each reached "vanilla-equivalent" at wildly different levels (4, ~21, and ~9 respectively) using one flat baseline shared by every mob type, so a level-1 zombie had 70% of vanilla health but only 20% of vanilla damage, and a scaled Enderman got the exact same health as a scaled Zombie. Health and damage now share one multiplier curve, relative to each mob's own real vanilla stat: `mob_scaling.early_game_fraction` (default 0.85) sets how weak a level-1 mob is relative to vanilla, and `mob_scaling.parity_level` (default 8) is the level at which it becomes exactly vanilla-equivalent in both stats together. Replaces `health_per_level`/`damage_per_level`. Armor and speed scaling are unchanged.
+
 ## [1.6.2] — 2026-07-13
 
 ### Fixed

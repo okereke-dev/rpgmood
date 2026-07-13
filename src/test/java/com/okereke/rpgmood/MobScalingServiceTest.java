@@ -3,6 +3,7 @@ package com.okereke.rpgmood;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MobScalingServiceTest {
 
@@ -40,5 +41,24 @@ class MobScalingServiceTest {
         int atTwoSteps = MobScalingService.calculateDifficultyLevel(3, 360.0, 0, 0, 0, 40, 180.0, 1);
         assertEquals(1, atOneStep);
         assertEquals(2, atTwoSteps);
+    }
+
+    @Test
+    void statMultiplierAtLevelOneEqualsEarlyGameFraction() {
+        double multiplier = MobScalingService.calculateStatMultiplier(1, 0.85, 8);
+        assertEquals(0.85, multiplier, 0.0001);
+    }
+
+    @Test
+    void statMultiplierReachesExactParityAtParityLevel() {
+        double multiplier = MobScalingService.calculateStatMultiplier(8, 0.85, 8);
+        assertEquals(1.0, multiplier, 0.0001);
+    }
+
+    @Test
+    void statMultiplierKeepsClimbingLinearlyPastParity() {
+        double atParity = MobScalingService.calculateStatMultiplier(8, 0.85, 8);
+        double doubleParityLevel = MobScalingService.calculateStatMultiplier(15, 0.85, 8);
+        assertTrue(doubleParityLevel > atParity);
     }
 }

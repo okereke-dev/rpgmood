@@ -4,6 +4,21 @@
 
 ---
 
+## ✅ v1.7.0 — Auto-merge de configs y curva de mobs pareja (Completado)
+
+- Config auto-merge: `config.yml`/`zones.yml`/`triggers.yml`/`farming.yml` ganan las claves
+  nuevas de cada versión automáticamente al iniciar/recargar, sin pisar nada que ya hayas
+  personalizado (usa el mecanismo nativo de Bukkit `setDefaults`/`copyDefaults`, no un sistema
+  de migración custom)
+- Curva de mobs reescrita: vida y daño ahora comparten una sola curva, relativa al stat
+  vanilla real de cada especie (`mob_scaling.early_game_fraction` / `parity_level`) — antes
+  cada stat llegaba a "equivalente a vanilla" en un nivel distinto (4, ~9, ~21), lo que hacía
+  que los mobs tempranos pegaran muchísimo más débil de lo que su vida sugería
+
+Ver `CHANGELOG.md` para el detalle completo.
+
+---
+
 ## ✅ v1.6.0 — Fix de leche, claim 100% vanilla, protección de spawn, color de zonas, afijos de mobs (Completado)
 
 - Fix: ordeñar ya no duplica/pierde buckets (bug en `handleMilk`)

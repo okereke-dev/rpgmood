@@ -19,16 +19,15 @@ public class ConfigManager {
     }
 
     public void reload() {
+        ConfigMerge.mergeAndSave(plugin, "config.yml");
         plugin.reloadConfig();
+        plugin.getConfig().options().copyDefaults(true);
         this.config = plugin.getConfig();
+
+        ConfigMerge.mergeAndSave(plugin, "zones.yml");
+        ConfigMerge.mergeAndSave(plugin, "triggers.yml");
         File zonesFile = new File(plugin.getDataFolder(), "zones.yml");
-        if (!zonesFile.exists()) {
-            plugin.saveResource("zones.yml", false);
-        }
         File triggersFile = new File(plugin.getDataFolder(), "triggers.yml");
-        if (!triggersFile.exists()) {
-            plugin.saveResource("triggers.yml", false);
-        }
         this.zones = YamlConfiguration.loadConfiguration(zonesFile);
         this.triggers = YamlConfiguration.loadConfiguration(triggersFile);
     }
