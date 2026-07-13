@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -26,12 +27,18 @@ final class MenuUtil {
         for (int i = size - 9; i < size; i++) if (i >= 0) inventory.setItem(i, pane);
     }
 
-    /** Builds a display icon with a non-italic name and lore (Minecraft italicizes item lore/names by default, which reads oddly for UI text). */
+    /**
+     * Builds a display icon with a non-italic name and lore (Minecraft italicizes item
+     * lore/names by default, which reads oddly for UI text). Also hides vanilla attribute
+     * tooltips (e.g. "+3 Attack Damage") that real weapon/armor materials carry intrinsically
+     * — these icons are UI decoration, not real items, so only the custom name/lore should show.
+     */
     static ItemStack icon(Material material, Component name, List<Component> lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(name.decoration(TextDecoration.ITALIC, false));
         meta.lore(lore.stream().map(line -> line.decoration(TextDecoration.ITALIC, false)).toList());
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         item.setItemMeta(meta);
         return item;
     }

@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.2] — 2026-07-13
+
+### Fixed
+- **Vanilla attribute text leaking into GUI menu icons** — `menu/MenuUtil.icon()`, the shared builder for every menu icon (including RPGLoot equipment icons showing real weapon/armor materials like `NETHERITE_SWORD`), never hid Minecraft's intrinsic attribute tooltip (e.g. "+3 Attack Damage"), so it showed up mixed in with the plugin's own name/lore. Now applies `ItemFlag.HIDE_ATTRIBUTES` like every real item RPGLoot generates already does.
+
 ## [1.6.1] — 2026-07-13
 
 ### Fixed
