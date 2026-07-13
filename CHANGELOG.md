@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.6.0] — 2026-07-12
+
+### Fixed
+- **Milking duplicated buckets** — `handleMilk` cleared the held bucket by mutating the `ItemStack` returned by `getItemInMainHand()` (`setType(AIR)`) instead of writing back to the inventory slot, so the original bucket wasn't reliably consumed. Now decrements the stack (or clears the slot via `setItemInMainHand(null)`) the same way `handleFeed` already did correctly.
+- **Animal claiming now triggers on the actual vanilla love-mode event** (`EntityEnterLoveModeEvent`) instead of guessing from the item in the player's hand on `PlayerInteractEntityEvent`. This is strictly more vanilla-faithful — a baby animal or one on breeding cooldown (cases vanilla itself wouldn't show hearts for) can no longer be claimed.
+
+### Added
+- **Radial spawn protection** — hostile mobs no longer naturally spawn within `spawn_protection.radius` (default 64) blocks of world spawn.
+- **Zone titles now colored by local danger** instead of a hand-picked-per-zone color — every zone (curated or procedurally generated) is colored using the same 5-tier palette RPGLoot uses for item rarity (gray → yellow → purple → green → gold), based on the Zombie-equivalent mob level at that location.
+- **Mob Affix System** — scaled mobs can now roll 1-2 RPG-flavored affixes (Swift, Wraith, Bleeding, Poisonous, Regenerating, Chilling), odds increasing with level. Bleeding/Poisonous/Chilling inflict their status on the player when hit — including a from-scratch bleed DOT, self-contained and independent of RPGLoot. Presence is signaled via a secondary particle marker and a one-time action-bar warning (name tags stay off by default). Configurable under `mob_scaling.affixes`.
+
+### Changed
+- Java package renamed `com.ricardo.*` → `com.okereke.*` across RPGMood (and RPGLoot). No functional change — cross-plugin `PersistentDataContainer` keys (`rpgmood:*`, `rpgloot:*`) are plugin-name-based, not package-based, so this doesn't affect the RPGLoot soft-integration.
+
 ## [1.5.0] — 2026-07-12
 
 ### Added
@@ -44,12 +58,12 @@
 ## [1.2.0] — 2026-07-12
 
 ### Added
-- **Public API for developers** — `PlayerZoneChangeEvent`, `MobScaleEvent`, `PlayerDeathMessageEvent`, `PlayerCropHarvestEvent` (`com.ricardo.rpgmood.api`), so other plugins (e.g. loot plugins) can hook into RPGMood without a hard dependency
+- **Public API for developers** — `PlayerZoneChangeEvent`, `MobScaleEvent`, `PlayerDeathMessageEvent`, `PlayerCropHarvestEvent` (`com.okereke.rpgmood.api`), so other plugins (e.g. loot plugins) can hook into RPGMood without a hard dependency
 - **bStats metrics** — registered with a real plugin ID
 - **Mob level particle auras** (`MobAuraEffect`) — subtle, level-tiered coloured particles around scaled mobs (blue/yellow/orange/red as level increases), only rendered for mobs near a player
 - **Achievement system** — 15 achievements across exploration, combat, farming, and survival (`AchievementManager`), persisted to `achievements.yml`; `/rpgmood achievements` shows unlocked/locked progress
 - **Action-bar ambient messages** (`MessageService`) — ambient/zone/achievement messages now default to the action bar instead of chat, with a per-player toggle
-- **Harvest Moon-style farming module** (`com.ricardo.rpgmood.farming`):
+- **Harvest Moon-style farming module** (`com.okereke.rpgmood.farming`):
   - Crop quality (Bronze/Silver/Gold) based on soil fertility, nearby water, weather, and zone danger
   - Four-season cycle (Spring/Summer/Autumn/Winter, 30 MC days each) affecting growth rate and available crops
   - Cooking & recipe discovery — recipes are learned by experimenting in a crafting table and grant temporary "Mood" buffs (Fortified, Comforted, Inspired, Agotado)

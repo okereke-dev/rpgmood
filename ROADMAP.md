@@ -4,6 +4,24 @@
 
 ---
 
+## ✅ v1.6.0 — Fix de leche, claim 100% vanilla, protección de spawn, color de zonas, afijos de mobs (Completado)
+
+- Fix: ordeñar ya no duplica/pierde buckets (bug en `handleMilk`)
+- Claim de animales salvajes migrado a `EntityEnterLoveModeEvent` — el evento vanilla real,
+  no un chequeo manual de "¿ítem == comida favorita?"
+- Protección radial de spawn: sin hostiles dentro de `spawn_protection.radius` (64 bloques
+  por defecto)
+- Color de título de zona por nivel de peligro local, con la paleta de rareza de RPGLoot
+  (gris/amarillo/morado/verde/dorado) — antes las zonas dinámicas salían en blanco
+- Sistema de afijos de mobs (Swift, Wraith, Bleeding, Poisonous, Regenerating, Chilling),
+  probabilidad creciente con el nivel, comunicado vía partícula secundaria + aviso de action
+  bar una sola vez
+- Paquete Java renombrado `com.ricardo.*` → `com.okereke.*` (sin cambios funcionales)
+
+Ver `CHANGELOG.md` para el detalle completo.
+
+---
+
 ## ✅ v1.5.0 — Menú GUI, limpieza de comandos, mensajes de conexión (Completado)
 
 - Menú de inventario (`/rpgmood` o `/rpgmood menu`): journal, achievements por categoría,
@@ -74,7 +92,7 @@ Ver `CHANGELOG.md` para el detalle completo.
 - **Aura de partículas en mobs escalados** — color/intensidad según nivel, solo visible cerca de jugadores
 - **Sistema de logros** — 15 logros (exploración, combate, farming, supervivencia), persistidos en `achievements.yml`, `/rpgmood achievements`
 - **Mensajes por action bar** — `MessageService`, con toggle por jugador
-- **Agricultura RPG (Harvest Moon-style)** — módulo `com.ricardo.rpgmood.farming` completo:
+- **Agricultura RPG (Harvest Moon-style)** — módulo `com.okereke.rpgmood.farming` completo:
   - Calidad de cultivos (Bronce/Plata/Oro) por fertilidad, agua cercana, clima y peligro de zona
   - Ciclo de 4 estaciones (30 días MC cada una)
   - Cocina con recetas descubribles y buffs de "Mood"

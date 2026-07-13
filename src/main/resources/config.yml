@@ -22,6 +22,12 @@ messages:
   join_first_time_sound: "ui.toast.challenge_complete"
   quit_sound: "entity.villager.no"
 
+# Radial safe zone around world spawn — hostile mobs never naturally spawn within this
+# distance, regardless of mob_scaling settings.
+spawn_protection:
+  enabled: true
+  radius: 64
+
 mob_scaling:
   enabled: true
   hostile-only: true
@@ -71,6 +77,37 @@ mob_scaling:
     woodland_mansion: 4
     ocean_monument: 4
     nether_fortress: 3
+  # RPG-flavored mob modifiers rolled at spawn on top of numeric scaling — see the Mob Affix
+  # System. Chance bands pick the highest threshold at or below the mob's level.
+  affixes:
+    enabled: true
+    max-per-mob: 2
+    warning-radius: 12
+    chance-by-level:
+      "10": 0.08
+      "20": 0.20
+      "30": 0.35
+      "40": 0.50
+    second-affix-chance-by-level:
+      "20": 0.03
+      "30": 0.10
+      "40": 0.20
+    roster:
+      SWIFT:
+        speed-bonus-pct: 25
+        speed-bonus-pct-elite: 40
+      BLEEDING:
+        proc-chance: 0.25
+        tick-damage-pct: 0.30
+        duration-ticks: 100
+      POISONOUS:
+        proc-chance: 0.25
+        duration-ticks: 100
+      REGENERATING:
+        armor-toughness-bonus: 2
+      CHILLING:
+        proc-chance: 0.30
+        duration-ticks: 60
 
 # ==========================================
 #   RPGMood - Narrative Death Messages v2

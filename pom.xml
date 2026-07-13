@@ -3,9 +3,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.ricardo</groupId>
+    <groupId>com.okereke</groupId>
     <artifactId>rpgmood</artifactId>
-    <version>1.5.0</version>
+    <version>1.6.0</version>
     <packaging>jar</packaging>
 
     <name>RPGMood</name>
@@ -99,7 +99,7 @@
                             <relocations>
                                 <relocation>
                                     <pattern>org.bstats</pattern>
-                                    <shadedPattern>com.ricardo.rpgmood.libs.bstats</shadedPattern>
+                                    <shadedPattern>com.okereke.rpgmood.libs.bstats</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
