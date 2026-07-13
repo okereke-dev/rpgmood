@@ -167,13 +167,20 @@ public class MobScalingService {
         entity.addScoreboardTag("rpgmood_scaled");
         entity.getPersistentDataContainer().set(levelKey, PersistentDataType.INTEGER, level);
 
-        // Store display name for death messages / debugging but don't show floating tag (invasive).
-        // Visual level indication is handled by MobAuraEffect (particle auras) and MobProximityTask (Action Bar).
-        String displayName = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("mob_scaling.name_format", "&cLv. {level} {name}")
-                .replace("{level}", String.valueOf(level))
-                .replace("{name}", entity.getName()));
-        entity.setCustomName(displayName);
-        entity.setCustomNameVisible(plugin.getConfig().getBoolean("mob_scaling.show_name_tags", false));
+        // Only set a custom name when the floating tag is actually shown — visual level
+        // indication otherwise comes from MobAuraEffect (particle auras) and the affix
+        // system's action-bar warning. Setting CustomName even while invisible would still
+        // make vanilla log a "Named entity X died: ..." line on every kill (vanilla logs
+        // deaths of any entity with a custom name, regardless of setCustomNameVisible), which
+        // floods the console once most mobs on the server are scaled.
+        boolean showNameTags = plugin.getConfig().getBoolean("mob_scaling.show_name_tags", false);
+        if (showNameTags) {
+            String displayName = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("mob_scaling.name_format", "&cLv. {level} {name}")
+                    .replace("{level}", String.valueOf(level))
+                    .replace("{name}", entity.getName()));
+            entity.setCustomName(displayName);
+            entity.setCustomNameVisible(true);
+        }
         return level;
     }
 

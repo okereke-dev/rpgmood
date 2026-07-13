@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.1] — 2026-07-13
+
+### Fixed
+- **Console log spam on every scaled-mob kill.** `MobScalingService` set a custom name on every scaled mob regardless of `mob_scaling.show_name_tags`, only using the config to control visibility of the floating tag. Vanilla Minecraft logs a `Named entity X died: ...` line for any entity with a custom name set, whether or not that name is visible — so with the default `show_name_tags: false`, every single scaled-mob kill on the server was still flooding the console. The custom name is now only set at all when `show_name_tags` is `true`; nothing else in the plugin depended on it being set while invisible (the affix name suffix and level display are otherwise driven by particle auras and the action-bar warning).
+
 ## [1.7.0] — 2026-07-13
 
 ### Added
