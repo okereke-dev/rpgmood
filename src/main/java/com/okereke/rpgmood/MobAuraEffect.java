@@ -23,6 +23,9 @@ public class MobAuraEffect extends BukkitRunnable {
     private static final int PARTICLE_COUNT = 1;
     private static final int PROXIMITY_RADIUS_SQ = 900; // 30 blocks squared
 
+    /** Tripped on the first spawnParticle failure so we stop retrying (and throwing) every tick for every mob — some server/Paper builds reject the DustOptions data type this uses. */
+    private static volatile boolean particlesDisabled = false;
+
     private final RPGMoodPlugin plugin;
 
     public MobAuraEffect(RPGMoodPlugin plugin) {
@@ -55,6 +58,8 @@ public class MobAuraEffect extends BukkitRunnable {
     }
 
     private void spawnAura(LivingEntity entity) {
+        if (particlesDisabled) return;
+
         Integer level = entity.getPersistentDataContainer()
                 .get(plugin.getMobScalingService().getLevelKey(), org.bukkit.persistence.PersistentDataType.INTEGER);
         if (level == null || level <= 0) return;
@@ -85,12 +90,17 @@ public class MobAuraEffect extends BukkitRunnable {
             return;
         }
 
-        if (data != null) {
-            entity.getWorld().spawnParticle(particle, entity.getLocation().add(0, 0.5, 0),
-                    PARTICLE_COUNT, AURA_RADIUS, AURA_RADIUS, AURA_RADIUS, 0, data);
-        } else {
-            entity.getWorld().spawnParticle(particle, entity.getLocation().add(0, 0.5, 0),
-                    PARTICLE_COUNT, AURA_RADIUS, AURA_RADIUS, AURA_RADIUS, 0);
+        try {
+            if (data != null) {
+                entity.getWorld().spawnParticle(particle, entity.getLocation().add(0, 0.5, 0),
+                        PARTICLE_COUNT, AURA_RADIUS, AURA_RADIUS, AURA_RADIUS, 0, data);
+            } else {
+                entity.getWorld().spawnParticle(particle, entity.getLocation().add(0, 0.5, 0),
+                        PARTICLE_COUNT, AURA_RADIUS, AURA_RADIUS, AURA_RADIUS, 0);
+            }
+        } catch (IllegalArgumentException e) {
+            particlesDisabled = true;
+            plugin.getLogger().warning("Mob level particle auras disabled — this server's Particle API rejected the expected data type (" + e.getMessage() + "). This is a server/Paper-version incompatibility, not a config issue; scaled mobs will still work, just without the color aura.");
         }
     }
 }

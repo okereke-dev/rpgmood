@@ -21,6 +21,9 @@ public class MobAffixAuraTask extends BukkitRunnable {
 
     private static final double AURA_PROXIMITY_RADIUS_SQ = 900.0; // 30 blocks, matches MobAuraEffect
 
+    /** Tripped on the first spawnParticle failure — mirrors MobAuraEffect's guard, some server/Paper builds reject the DustOptions data type this uses. */
+    private static volatile boolean particlesDisabled = false;
+
     private final RPGMoodPlugin plugin;
 
     public MobAffixAuraTask(RPGMoodPlugin plugin) {
@@ -59,7 +62,7 @@ public class MobAffixAuraTask extends BukkitRunnable {
             }
         }
 
-        if (nearAnyPlayer) {
+        if (nearAnyPlayer && !particlesDisabled) {
             spawnMarker(entity);
         }
     }
@@ -70,10 +73,15 @@ public class MobAffixAuraTask extends BukkitRunnable {
     }
 
     private void spawnMarker(LivingEntity entity) {
-        entity.getWorld().spawnParticle(Particle.REDSTONE,
-                entity.getLocation().add(0, entity.getHeight() + 0.3, 0),
-                1, 0.2, 0.2, 0.2, 0,
-                new Particle.DustOptions(Color.fromRGB(180, 40, 220), 0.5f));
+        try {
+            entity.getWorld().spawnParticle(Particle.REDSTONE,
+                    entity.getLocation().add(0, entity.getHeight() + 0.3, 0),
+                    1, 0.2, 0.2, 0.2, 0,
+                    new Particle.DustOptions(Color.fromRGB(180, 40, 220), 0.5f));
+        } catch (IllegalArgumentException e) {
+            particlesDisabled = true;
+            plugin.getLogger().warning("Mob affix particle markers disabled — this server's Particle API rejected the expected data type (" + e.getMessage() + "). This is a server/Paper-version incompatibility, not a config issue; affix warnings still work, just without the marker.");
+        }
     }
 
     private void warn(Player player, LivingEntity entity, String affixTag) {

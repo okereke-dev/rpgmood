@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.1] — 2026-07-13
+
+### Fixed
+- **Mob level particle auras crashing every tick** — `MobAuraEffect.spawnAura` (and the new `MobAffixAuraTask.spawnMarker`) passed `Particle.DustOptions` to `World#spawnParticle`, which some server/Paper builds reject (`IllegalArgumentException: data ... should be class org.bukkit.Color`), spamming the console and burning a scheduled tick on every affected mob. Both now catch the failure once, log a single warning, and permanently disable that particle effect for the rest of the runtime instead of retrying (and crashing) every tick. Scaled mobs and their stats are unaffected — only the color aura/marker degrades if the server's particle API doesn't support it.
+
 ## [1.6.0] — 2026-07-12
 
 ### Fixed
