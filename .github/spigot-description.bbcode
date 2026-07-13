@@ -10,15 +10,35 @@ RPGMood layers atmosphere and a sense of place on top of unmodified vanilla surv
 Hostile mobs gain levels based on [B]distance from spawn[/B], [B]biome[/B], [B]nearby vanilla structures[/B], and [B]how many players are nearby[/B] — shown live in the mob's name (Lv. 12 Zombie).
 
 [LIST]
-[*]Health, attack damage, armor, and movement speed all scale with level
+[*]Health, attack damage, armor, and movement speed all scale with level — health and damage share one even curve tuned to each mob's own real vanilla stats, so scaling feels consistent between mob types instead of a level-1 zombie and a level-1 Enderman ending up wildly mismatched
 [*]Per-mob-type difficulty seeds (Zombie is easier than Wither Skeleton at the same distance)
 [*]Biome and structure bonuses are fully configurable — make deserts scarier, or strongholds a real threat
+[*][B]Aggro range scales with the same curve[/B] — weak early-game mobs notice you from a bit less far than vanilla, dangerous late-game mobs just as far or farther
+[*][B]Night and thunderstorm bonuses[/B] stack extra difficulty on top of the existing distance/biome/structure/player scaling
+[*][B]Radial spawn protection[/B] — hostile mobs no longer naturally spawn within a configurable radius of world spawn
 [*]Structure-proximity checks are cached per region, so this stays cheap even with heavy mob spawning
 [*][B]Bonus XP on kill[/B], proportional to the mob's level — difficulty isn't just punishment
 [*][B]Server-wide announcement[/B] when a dangerously high-level mob spawns (configurable threshold and cooldown)
 [*]Every scaled mob's level is exposed via PersistentDataContainer for other plugins (e.g. loot plugins) to hook into
-[*]Fully tunable in config.yml: health/damage/armor/speed growth per level, max level cap, and every bonus source
+[*]Fully tunable in config.yml: growth curve, max level cap, night/thunder bonuses, spawn-protection radius, and every bonus source
 [/LIST]
+
+[COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
+
+[SIZE=4][B]👹 Mob Affixes[/B][/SIZE]
+
+Scaled mobs can roll [B]1–2 affixes[/B], odds increasing with level, each flagged by a subtle particle marker and a one-time action-bar warning (name tags stay off by default):
+
+[LIST]
+[*][B]Swift[/B] — noticeably faster, up to 40% at higher levels
+[*][B]Wraith[/B] — turns invisible; the particle marker is your only tell
+[*][B]Regenerating[/B] — heals over time mid-fight
+[*][B]Bleeding[/B] — on-hit chance to inflict a stacking bleed DOT on you
+[*][B]Poisonous[/B] — on-hit chance to poison you
+[*][B]Chilling[/B] — on-hit chance to slow you
+[/LIST]
+
+Proc chances, durations, and bonus magnitudes are all tunable under mob_scaling.affixes in config.yml.
 
 [COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
 
@@ -30,6 +50,10 @@ Crossing into a new zone shows a title/subtitle, plays a sound and particles, an
 [*][B]Biome zones[/B] — trigger when you enter a configured biome
 [*][B]WorldGuard zones[/B] — trigger when you step inside a named WorldGuard region (optional integration)
 [*][B]Unclaimed areas[/B] aren't left blank — every corner of the map gets a procedurally-combined name (e.g. "Elden Meadows", "the ash-choked Sunlit Barrows") built by recombining a pool of biome-appropriate adjectives and nouns, giving hundreds of unique names per biome without repeating
+[*][B]Zone titles are colored by local danger[/B] — the same 5-tier palette RPGLoot uses for item rarity (gray → yellow → purple → green → gold), based on the mob level at that location
+[*][B]Optional sidebar scoreboard[/B] (/rpgmood toggle scoreboard) shows your current zone, local danger level, and session kill count; a temporary danger-colored BossBar also flashes on every zone change
+[*][B]/rpgmood zones[/B] lists every zone you've discovered — biome, danger level, first-seen date — lets you mark favorites, and shows distance to your nearest known zone
+[*][B]Per-zone music[/B] — an optional namespaced sound key (resource-pack friendly) plays once on entry
 [/LIST]
 
 [COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
@@ -50,6 +74,21 @@ Every death is also saved to the player's persistent adventure journal.
 
 [COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
 
+[SIZE=4][B]🖥 GUI Menu[/B][/SIZE]
+
+/rpgmood with no arguments (or /rpgmood menu explicitly) opens an inventory-based hub — every system below, in one place, no commands to memorize:
+
+[LIST]
+[*][B]Adventure Journal[/B], [B]Achievements[/B] (filterable by category), [B]Current Zone[/B] (open to every player, not just admins), [B]Leaderboard[/B], [B]Farming[/B], [B]My Animals[/B], and [B]Settings[/B] panels
+[*]If [B]RPGLoot[/B] is installed, an extra panel shows your equipped rarities, active set, and lifetime loot stats
+[*]Admins get an [B]Admin Config[/B] panel — steppers for spawn-protection radius, the mob-scaling curve, night/thunder bonuses, and the weather-effects toggle, writing straight to config.yml with no file editing required
+[*]Every existing text command (/diary, /rpgmood leaderboard, /rpgmood-farm, etc.) still works exactly as before — the menu is an addition, not a replacement
+[*]Tab-completion on /rpgmood, /diary, and /rpgmood-farm
+[*]Custom join/quit messages (action-bar or chat, per player preference) with a distinct message and sound for a player's very first join
+[/LIST]
+
+[COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
+
 [SIZE=4][B]📖 Adventure Journal & Leaderboard[/B][/SIZE]
 
 [LIST]
@@ -59,26 +98,77 @@ Every death is also saved to the player's persistent adventure journal.
 
 [COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
 
-[SIZE=4][B]🌦 Ambient Time & Weather Events[/B][/SIZE]
+[SIZE=4][B]📈 Player Progression[/B][/SIZE]
 
-Scheduled messages and sounds tied to time-of-day (dawn, midday, dusk, midnight) and weather transitions (rain/thunder start and stop), plus chance-based flavor messages on breaking configured blocks. All fully defined in triggers.yml.
+/rpgmood level — a player progression level, separate from mob difficulty levels, shown right on the GUI menu's front page.
+
+[LIST]
+[*]Earned from scaled-mob kills and discovering new zones
+[*]Every 5 levels raises your farm animal ownership cap by 1
+[/LIST]
 
 [COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
 
-[SIZE=4][B]🔌 Integrations[/B][/SIZE]
+[SIZE=4][B]🏆 Achievements[/B][/SIZE]
 
-Both optional — RPGMood works standalone and detects these automatically at startup.
+[B]31 achievements[/B] across exploration, combat, survival, and farming — /rpgmood achievements shows your progress grouped by category, unlocked ones announced in chat and logged to your journal.
+
+Not just grindy counters — the roster leans into things players actually chase for bragging rights: [B]Godslayer[/B] (kill the Warden, Wither, Elder Guardian, [I]and[/I] Ender Dragon), [B]Untouchable[/B] (kill a level 20+ mob without ever taking damage from it), [B]Cartographer[/B] (discover every zone you've configured), [B]Noah's Ark[/B] (own one of every farm animal), and more. All persisted to achievements.yml, survive restarts.
+
+If [B]RPGLoot[/B] is installed, 6 additional Loot achievements unlock — [B]Legendary Hunter[/B], [B]Relic Bearer[/B], and the ultimate flex, [B]Godslayer's Arsenal[/B] (collect all 4 of RPGLoot's boss-exclusive Artifacts). Zero setup required and zero effect if RPGLoot isn't installed.
+
+[COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
+
+[SIZE=4][B]🌾 Harvest Moon-Style Farming[/B][/SIZE]
+
+A full farming, cooking, and animal-husbandry module (/rpgmood-farm), inspired by Harvest Moon NES/N64:
+
+[LIST]
+[*][B]Crop quality[/B] — every harvest scores Bronze/Silver/Gold based on soil fertility (per biome), nearby water, rain, and the zone's danger level
+[*][B]Four seasons[/B] (Spring/Summer/Autumn/Winter, 30 MC days each) — each with its own growth multiplier and season-exclusive crops
+[*][B]Cooking & recipes[/B] — discovered by experimenting with ingredients in a crafting table, grant temporary "Mood" buffs (bonus damage, regeneration, bonus XP)
+[*][B]Animal husbandry, no shop involved[/B] — feed a wild cow/chicken/sheep/goat its normal vanilla breeding food and it's yours; pet, feed, milk, and shear claimed animals, and breeding automatically grows your herd under a shared owner. An affection system drives product quality, and neglect leads to sickness
+[*][B]Fine-grained permissions[/B] — rpgmood.player.farming splits into .season/.crops/.recipes/.animal nodes if you want to restrict any single piece (all enabled by default)
+[/LIST]
+
+[COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
+
+[SIZE=4][B]🌦 Ambient Time & Weather Events[/B][/SIZE]
+
+RPGMood keeps the world feeling alive around you, not just when something notable happens:
+
+[LIST]
+[*]Scheduled messages and sounds tied to time-of-day (dawn, midday, dusk, midnight) and weather transitions (rain/thunder start and stop)
+[*][B]Ambient sounds[/B] — low-probability birdsong and eerie ambience play near each player, independent of the scripted time/weather messages
+[*][B]Weather now has mechanical bite[/B] — brief Darkness pulses during thunderstorms and small wind nudges during rain under open sky, both checked against the world's live weather state
+[*][B]Nether acid rain[/B] — a periodic hazard for the one dimension vanilla weather doesn't reach
+[*]Chance-based flavor messages on breaking configured blocks
+[*]All fully defined in triggers.yml and config.yml
+[/LIST]
+
+[COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
+
+[SIZE=4][B]🔌 Integrations & Developer API[/B][/SIZE]
+
+All optional — RPGMood works standalone and detects these automatically at startup.
 
 [LIST]
 [*][B]PlaceholderAPI[/B] — %rpgmood_zone%, %rpgmood_area_danger% for scoreboards and tab list
 [*][B]WorldGuard[/B] — enables region-based zones
+[*][B]RPGLoot[/B] — soft, zero-dependency integration in both directions: RPGLoot raises drop rarity floors near dangerous RPGMood mobs, and RPGMood's achievements react to RPGLoot's rarities/artifacts/sets. Neither plugin requires the other.
+[*][B]Public API for developers[/B] — PlayerZoneChangeEvent, MobScaleEvent, PlayerDeathMessageEvent, PlayerCropHarvestEvent let other plugins hook into RPGMood without a hard dependency
 [/LIST]
 
 [COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
 
 [SIZE=4][B]🛠 Admin Tools[/B][/SIZE]
 
-/rpgmood info shows your current zone and the mob difficulty level a Zombie, Skeleton, and Enderman would each get at your exact location — the fastest way to sanity-check your mob_scaling tuning without waiting for a real mob to spawn.
+[LIST]
+[*]/rpgmood info shows your current zone and the mob difficulty level a Zombie, Skeleton, and Enderman would each get at your exact location — the fastest way to sanity-check your mob_scaling tuning without waiting for a real mob to spawn
+[*]/rpgmood reload and /rpgmood toggle remain available for scripting and console use
+[*]The in-game [B]Admin Config[/B] GUI panel (see GUI Menu above) covers the same tuning with steppers, no file editing required
+[*]config.yml, zones.yml, triggers.yml, and farming.yml all [B]auto-merge new keys[/B] on startup or reload — updating RPGMood never silently wipes a config you've already customized
+[/LIST]
 
 [COLOR=#444444]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR]
 
@@ -86,7 +176,7 @@ Both optional — RPGMood works standalone and detects these automatically at st
 
 1. Drop rpgmood.jar into your /plugins folder
 2. Restart the server
-3. Done — config.yml, zones.yml, and triggers.yml generate automatically
+3. Done — config.yml, zones.yml, triggers.yml, and farming.yml generate automatically
 
 [B]Requirements:[/B] Paper/Spigot 1.20.4+ · Java 21+ · No required dependencies
 
