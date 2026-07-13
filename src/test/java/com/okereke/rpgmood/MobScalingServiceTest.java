@@ -44,6 +44,21 @@ class MobScalingServiceTest {
     }
 
     @Test
+    void nightBonusAddsOnTopOfDaytimeLevel() {
+        // Same non-degenerate inputs as combinesBaseDistanceBiomeStructureAndPlayerBonuses
+        // (day total 14), so the +2 night bonus doesn't get masked by the level-1 floor clamp.
+        int day = MobScalingService.calculateDifficultyLevel(5, 900.0, 2, 3, 2, 40, 180.0, 1, 0);
+        int night = MobScalingService.calculateDifficultyLevel(5, 900.0, 2, 3, 2, 40, 180.0, 1, 2);
+        assertEquals(day + 2, night);
+    }
+
+    @Test
+    void nightBonusStillClampsToMaxLevel() {
+        int level = MobScalingService.calculateDifficultyLevel(5, 100000.0, 10, 10, 10, 40, 180.0, 1, 2);
+        assertEquals(40, level);
+    }
+
+    @Test
     void statMultiplierAtLevelOneEqualsEarlyGameFraction() {
         double multiplier = MobScalingService.calculateStatMultiplier(1, 0.85, 8);
         assertEquals(0.85, multiplier, 0.0001);

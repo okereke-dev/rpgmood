@@ -6,6 +6,27 @@ settings:
   zone_change_cooldown: 45
   particle_update_interval: 40
 
+# Low-probability flavor sound played near each player, checked every ~1s (20 ticks): birds
+# by day, eerie ambience by night. Purely cosmetic, no chat/action-bar message. Swap in your
+# own sound keys (including resource-pack custom ones) freely.
+ambient_sounds:
+  enabled: true
+  chance: 0.02
+  day:
+    - "entity.parrot.ambient"
+  night:
+    - "ambient.cave"
+
+# Mechanical effects while a storm is actually live (checked against the world's real weather
+# state each ~1s tick, not tied to the one-shot start/stop messages in triggers.yml).
+weather_effects:
+  enabled: true
+  # Chance per player per check, while thundering, to apply a brief Darkness pulse (fog feel).
+  fog_chance: 0.05
+  # Chance per player per check, while storming and standing under open sky, to get nudged by wind.
+  wind_chance: 0.03
+  wind_strength: 0.15
+
 messages:
   # Delivery mode for ambient messages: CHAT (traditional) or ACTION_BAR (non-intrusive overlay, default)
   delivery: ACTION_BAR
@@ -41,6 +62,10 @@ mob_scaling:
   parity_level: 8
   armor_per_level: 0.25
   speed_per_level: 0.0015
+  # Extra flat level added to any mob computed between 13000-23000 ticks (vanilla night).
+  night_bonus: 2
+  # Extra flat level added to any mob computed while it's thundering in that world.
+  thunder_bonus: 2
   radius:
     step_distance: 180
   players_bonus_per_player: 1

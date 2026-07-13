@@ -41,7 +41,8 @@ public class AnimalBreedListener implements Listener {
         if (owner == null) return;
 
         Player player = Bukkit.getPlayer(owner);
-        int maxPerPlayer = plugin.getConfig().getInt("farming.animals.max_per_player", 20);
+        int maxPerPlayer = plugin.getConfig().getInt("farming.animals.max_per_player", 20)
+                + plugin.getPlayerLevelService().getAnimalCapBonus(owner);
         List<AnimalData> owned = manager.getOwnedAnimals(owner);
         if (owned.size() >= maxPerPlayer) return;
 

@@ -1,6 +1,10 @@
 # ==========================================
 #          RPGMood - Zone Configuration
 # ==========================================
+# Every zone below supports an optional "music" key — a sound key played once on entry
+# (not looped), separate from "sound". Use a namespaced custom key (e.g.
+# "custom:zone.elden_meadows") so a resource pack can supply the actual track without
+# touching this file. Left unset by default — no music plays unless you add it.
 
 zones:
   elden_meadows:

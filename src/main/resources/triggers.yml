@@ -57,3 +57,12 @@ block_events:
     block: "DIAMOND_ORE"
     chance: 30
     message: "&e[Ambient] &bAn ancient energy emanates from the broken crystal..."
+
+# The Nether has no vanilla weather, so this is a standalone periodic hazard (chance checked
+# every ~1s per player standing in the Nether) rather than a weather_events entry.
+nether_events:
+  acid_rain:
+    enabled: true
+    chance: 0.01
+    damage: 1.0
+    message: "&4Ash rains from above, searing your skin."

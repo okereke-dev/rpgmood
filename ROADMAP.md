@@ -4,6 +4,32 @@
 
 ---
 
+## ✅ v1.8.0 — Progresión, scoreboard/bossbar de zona, clima con efecto mecánico, /zones (Completado)
+
+- Aggro sigue la curva de nivel — mobs débiles tempranos detectan un poco menos lejos que
+  vanilla, mobs fuertes tardíos igual o más, misma curva `early_game_fraction`/`parity_level`
+  que vida/daño
+- Scoreboard lateral opcional (`/rpgmood toggle scoreboard`) + BossBar temporal por color de
+  peligro al cambiar de zona, con kills en sesión
+- `/rpgmood zones [fav <nombre>]` — zonas descubiertas (bioma, peligro, fecha), favoritas,
+  distancia a la zona conocida más cercana
+- Bonus de mob scaling nocturno/tormenta (`mob_scaling.night_bonus`/`thunder_bonus`, +2 c/u
+  por defecto) y sonidos ambientales día/noche
+- Clima con efecto mecánico real, no solo mensajes: pulsos de Darkness en tormenta, empujones
+  de viento con lluvia a cielo abierto, lluvia ácida periódica en el Nether
+  (`nether_events.acid_rain`)
+- Música por zona (`zones.yml`'s clave `music`, reproducida una vez al entrar)
+- Nivel de jugador (`/rpgmood level`, visible en el menú) — XP por matar mobs escalados y
+  descubrir zonas, cada 5 niveles sube el cupo de animales propios
+- Panel "Admin Config" en el menú GUI (`rpgmood.admin`) — steppers para radio de spawn, curva
+  de mob scaling, bonus nocturno/tormenta, toggle de efectos de clima
+- `/rpgmood-farm` con permisos finos por subcomando (`.season`/`.crops`/`.recipes`/`.animal`,
+  todos default `true`)
+
+Ver `CHANGELOG.md` para el detalle completo.
+
+---
+
 ## ✅ v1.7.0 — Auto-merge de configs y curva de mobs pareja (Completado)
 
 - Config auto-merge: `config.yml`/`zones.yml`/`triggers.yml`/`farming.yml` ganan las claves
@@ -133,66 +159,20 @@ Todos los bugs corregidos:
 
 ---
 
-## 🏆 Prioridad Alta (Próximo release)
-
-### 1. Scoreboard / BossBar de zona actual
-- Mostrar zona actual, nivel de peligro (mob scaling), kills en sesión
-- BossBar temporal al cambiar de zona (además del Title actual)
-- Comando `/rpgmood toggle bossbar`
-
----
-
-## 🟡 Prioridad Media
-
-### 2. Eventos climáticos dinámicos
-- Niebla densa (partículas + visibilidad reducida via potion effect)
-- Tormentas que afectan comportamiento de mobs
-- Lluvia ácida en el Nether (daño gradual)
-- Viento que empuja al jugador (Knockback simulado)
-
-### 3. Ciclo día/noche mejorado
-- Mensajes ambientales en momentos clave (amanecer, mediodía, atardecer, medianoche)
-- Mob scaling bonus nocturno (+2 niveles de noche)
-- Sonidos ambientales distintos (grillos de noche, pájaros de día)
-
-### 4. Comando `/zones`
-- Lista de zonas descubiertas (con bioma, peligro, fecha de primer avistamiento)
-- Marcado de zonas favoritas
-- Distancia a la zona más cercana
-
----
-
 ## 🔵 Prioridad Baja
 
-### 5. Nivel de jugador (RPG Progression)
-- XP por matar mobs escalados, explorar zonas, sobrevivir
-- Niveles que desbloquean perks pasivos
-- Comando `/level` o integración en `/rpgmood`
-
-### 6. Música ambiental por zona
-- Reproducir notas musicales o sonidos largos al entrar a zonas especiales
-- Compatible con resource packs que añadan música personalizada
-
-### 7. Discord Webhook
+### 1. Discord Webhook
 - Anuncios de mobs de alto nivel → Discord
 - Muertes narrativas → Discord #deaths
 - Leaderboard semanal → Discord #leaderboard
 
-### 8. MySQL / SQLite
+### 2. MySQL / SQLite
 - Migrar PlayerJournalService y PlayerStatsService a base de datos
 - Necesario para redes multi-servidor (BungeeCord / Velocity)
 
-### 9. Localización (i18n)
+### 3. Localización (i18n)
 - Archivos `messages_es.yml`, `messages_en.yml`, etc.
 - Sistema de fallback al inglés si falta una clave
-
-### 10. GUI de configuración en juego
-- Menú con clics para configurar zonas sin editar YAML
-- Integración con `/rpgmood admin config`
-
-### 11. Permisos por subcomando en `/rpgmood-farm`
-- Hoy `rpgmood-farm` está gateado como un solo permiso (`rpgmood.player.farming`)
-- Separar en nodos finos (ej. `rpgmood.player.farming.animal.buy`) si algún server lo necesita
 
 ---
 

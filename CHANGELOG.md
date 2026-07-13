@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.8.0] — 2026-07-13
+
+### Added
+- **Aggro follows the level curve** — weak early-game mobs notice players from a bit less far away than vanilla, strong late-game mobs just as much or more, using the same `early_game_fraction`/`parity_level` curve as health/damage.
+- **Sidebar scoreboard + zone BossBar** — optional (`/rpgmood toggle scoreboard`) sidebar showing current zone, local danger level, and session kill count; a temporary BossBar (colored by danger tier) appears for a few seconds on every zone change.
+- **`/rpgmood zones`** — lists every zone you've discovered (biome, current danger level where computable, first-seen date), `/rpgmood zones fav <name>` to mark favorites, and shows distance to your nearest known zone.
+- **Night and thunderstorm mob bonus** — `mob_scaling.night_bonus`/`thunder_bonus` (default +2 each) add extra difficulty during vanilla night and thunderstorms, stacking with the existing distance/biome/structure/player bonuses.
+- **Day/night ambient sounds** — low-probability bird/eerie-ambience flavor sounds near each player (`ambient_sounds` in `config.yml`), separate from the existing time/weather chat messages.
+- **Weather now has mechanical effects, not just messages** — brief Darkness pulses during thunderstorms (`weather_effects.fog_chance`) and small wind nudges during rain when standing under open sky (`wind_chance`), checked against the world's live weather state.
+- **Nether acid rain** — a new `nether_events.acid_rain` periodic hazard (the Nether has no vanilla weather to hook into otherwise).
+- **Per-zone music** — optional `music` key in `zones.yml`, a namespaced sound key (resource-pack friendly) played once on entry.
+- **Player progression level** (`/rpgmood level`, shown in the main menu) — a separate XP/level track from mob difficulty levels, earned from scaled-mob kills and discovering new zones; every 5 levels raises your animal ownership cap by 1.
+- **In-game admin config editor** — new "Admin Config" panel in the GUI menu (admin-only) with steppers for spawn protection radius, the mob-scaling curve, night/thunder bonuses, and the weather-effects toggle — writes straight to `config.yml`.
+- **Fine-grained `/rpgmood-farm` permissions** — `rpgmood.player.farming` split into `.season`/`.crops`/`.recipes`/`.animal` (all default `true`, so behavior is unchanged unless you explicitly restrict one).
+
 ## [1.7.1] — 2026-07-13
 
 ### Fixed

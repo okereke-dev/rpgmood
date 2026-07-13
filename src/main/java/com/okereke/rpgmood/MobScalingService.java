@@ -164,6 +164,14 @@ public class MobScalingService {
             speedAttribute.setBaseValue(Math.max(0.01, speedAttribute.getBaseValue() + speedBonus));
         }
 
+        // Weak early mobs also notice the player from a bit less far away; strong late-game
+        // mobs are just as (or more) alert than vanilla — same curve as health/damage.
+        AttributeInstance followRangeAttribute = entity.getAttribute(Attribute.GENERIC_FOLLOW_RANGE);
+        if (followRangeAttribute != null) {
+            double followRange = Math.max(4.0, followRangeAttribute.getDefaultValue() * statMultiplier);
+            followRangeAttribute.setBaseValue(followRange);
+        }
+
         entity.addScoreboardTag("rpgmood_scaled");
         entity.getPersistentDataContainer().set(levelKey, PersistentDataType.INTEGER, level);
 
@@ -204,6 +212,10 @@ public class MobScalingService {
         int biomeBonus = getBiomeBonus(location);
         int structureBonus = getStructureBonus(location);
         int nearbyPlayers = countNearbyPlayers(location);
+        long worldTime = location.getWorld().getTime() % 24000L;
+        boolean isNight = worldTime >= 13000L && worldTime < 23000L;
+        int nightBonus = isNight ? section.getInt("night_bonus", 2) : 0;
+        int thunderBonus = location.getWorld().isThundering() ? section.getInt("thunder_bonus", 2) : 0;
 
         return calculateDifficultyLevel(
                 baseLevel,
@@ -213,14 +225,21 @@ public class MobScalingService {
                 nearbyPlayers,
                 section.getInt("max-level", 40),
                 section.getDouble("radius.step_distance", 180.0),
-                section.getInt("players_bonus_per_player", 1)
+                section.getInt("players_bonus_per_player", 1),
+                nightBonus + thunderBonus
         );
     }
 
+    /** Same as the 9-arg overload with no situational bonus — kept for existing callers/tests. */
     public static int calculateDifficultyLevel(int baseLevel, double distanceFromSpawn, int biomeBonus, int structureBonus, int nearbyPlayers, int maxLevel, double stepDistance, int playerBonusPerPlayer) {
+        return calculateDifficultyLevel(baseLevel, distanceFromSpawn, biomeBonus, structureBonus, nearbyPlayers, maxLevel, stepDistance, playerBonusPerPlayer, 0);
+    }
+
+    /** {@code situationalBonus} is the combined night + thunderstorm bonus (see {@link #calculateLevelAt}) — kept as one flat int here since the level formula only needs the total, not each source. */
+    public static int calculateDifficultyLevel(int baseLevel, double distanceFromSpawn, int biomeBonus, int structureBonus, int nearbyPlayers, int maxLevel, double stepDistance, int playerBonusPerPlayer, int situationalBonus) {
         int radialLevel = (int) Math.floor(distanceFromSpawn / stepDistance);
         int adjustedBase = Math.max(0, baseLevel - 2);
-        int total = adjustedBase + Math.max(0, radialLevel - 1) + biomeBonus + structureBonus + nearbyPlayers * playerBonusPerPlayer;
+        int total = adjustedBase + Math.max(0, radialLevel - 1) + biomeBonus + structureBonus + nearbyPlayers * playerBonusPerPlayer + situationalBonus;
         return Math.max(1, Math.min(maxLevel, total));
     }
 

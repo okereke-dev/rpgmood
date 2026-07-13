@@ -69,6 +69,8 @@ public class MobDeathListener implements Listener {
 
         plugin.getPlayerStatsService().recordMobKill(killer, level);
         plugin.getAchievementManager().onScaledMobKill(killer, level);
+        plugin.getZoneScoreboardService().incrementSessionKills(killer);
+        plugin.getPlayerLevelService().addXp(killer, level * 5L);
 
         if (tookNoDamageFromMob) {
             plugin.getAchievementManager().onUndamagedKill(killer, level);

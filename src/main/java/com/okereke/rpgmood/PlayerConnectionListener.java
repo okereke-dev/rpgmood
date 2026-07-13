@@ -34,6 +34,7 @@ public class PlayerConnectionListener implements Listener {
                 "entity.player.levelup");
 
         broadcastConnectionEvent(player, template, sound);
+        plugin.getZoneScoreboardService().updateScoreboard(player);
     }
 
     @EventHandler

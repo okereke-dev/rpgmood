@@ -26,5 +26,6 @@ public class ZoneListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         plugin.getZoneManager().handlePlayerQuit(event.getPlayer());
+        plugin.getZoneScoreboardService().remove(event.getPlayer().getUniqueId());
     }
 }

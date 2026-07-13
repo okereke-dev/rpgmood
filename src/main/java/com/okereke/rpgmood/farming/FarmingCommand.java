@@ -37,12 +37,21 @@ public class FarmingCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        switch (args[0].toLowerCase()) {
+        String sub = args[0].toLowerCase();
+        if (!List.of("season", "crops", "recipes", "animal").contains(sub)) {
+            showHelp(player);
+            return true;
+        }
+        if (!player.hasPermission("rpgmood.player.farming." + sub)) {
+            player.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(plugin.getConfig().getString("messages.no_permission", "&cNo permission")));
+            return true;
+        }
+
+        switch (sub) {
             case "season" -> handleSeason(player);
             case "crops" -> handleCrops(player);
             case "recipes" -> handleRecipes(player, args);
             case "animal" -> handleAnimal(player, args);
-            default -> showHelp(player);
         }
         return true;
     }

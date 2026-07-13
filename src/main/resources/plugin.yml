@@ -1,5 +1,5 @@
 name: RPGMood
-version: 1.7.1
+version: 1.8.0
 main: com.okereke.rpgmood.RPGMoodPlugin
 api-version: '1.20'
 author: Okereke
@@ -7,7 +7,7 @@ softdepend: [PlaceholderAPI, WorldGuard]
 commands:
   rpgmood:
     description: Main RPGMood commands
-    usage: /rpgmood <menu|reload|toggle [titles]|info|leaderboard [deaths|zones|level]|achievements>
+    usage: /rpgmood <menu|reload|toggle [titles|scoreboard]|info|leaderboard [deaths|zones|level]|achievements|zones [fav <name>]|level>
   diary:
     description: Opens the player's adventure journal
     usage: /diary
@@ -16,7 +16,6 @@ commands:
   rpgmood-farm:
     description: RPGMood farming commands
     usage: /rpgmood-farm <season|crops|recipes [all]|animal list>
-    permission: rpgmood.player.farming
 permissions:
   rpgmood.admin:
     default: op
@@ -28,5 +27,23 @@ permissions:
     default: true
   rpgmood.player.farming:
     default: true
+    description: Grants all /rpgmood-farm subcommands (shorthand for the 4 nodes below)
+    children:
+      rpgmood.player.farming.season: true
+      rpgmood.player.farming.crops: true
+      rpgmood.player.farming.recipes: true
+      rpgmood.player.farming.animal: true
+  rpgmood.player.farming.season:
+    default: true
+  rpgmood.player.farming.crops:
+    default: true
+  rpgmood.player.farming.recipes:
+    default: true
+  rpgmood.player.farming.animal:
+    default: true
   rpgmood.player.achievements:
+    default: true
+  rpgmood.player.zones:
+    default: true
+  rpgmood.player.level:
     default: true

@@ -698,6 +698,17 @@ public class ZoneManager {
 
         boolean showTitle = shouldShowTitle(player, currentZone, now);
         sendZoneFeedback(player, currentZone, showTitle);
+
+        boolean wasNewDiscovery = plugin.getZoneDiscoveryService().getDiscoveries(player).stream()
+                .noneMatch(z -> z.key().equals(currentZone));
+        plugin.getZoneDiscoveryService().recordDiscovery(player, currentZone, newDisplay);
+        if (wasNewDiscovery) {
+            plugin.getPlayerLevelService().addXp(player, 15L);
+        }
+        plugin.getZoneScoreboardService().updateScoreboard(player);
+        int baseLevel = plugin.getMobScalingService().getBaseLevel(EntityType.ZOMBIE);
+        int danger = plugin.getMobScalingService().calculateLevelAt(player.getLocation(), baseLevel);
+        plugin.getZoneScoreboardService().showZoneBossBar(player, newDisplay, danger);
     }
 
     /** Gets the display name for a zone key, handling both configured and dynamic zones. */
@@ -853,6 +864,14 @@ public class ZoneManager {
 
         if (section != null) {
             spawnZoneParticles(player, section.getString("particles", "NONE"));
+
+            // Optional per-zone theme, played once on entry (not looped, so there's no
+            // "am I still in this zone" state to track). Namespaced sound key so resource
+            // packs can supply their own music without touching config.yml.
+            String music = section.getString("music", "");
+            if (!music.isBlank()) {
+                player.playSound(player.getLocation(), music, org.bukkit.SoundCategory.MUSIC, 1.0f, 1.0f);
+            }
         }
 
         if (!titleText.isBlank()) {

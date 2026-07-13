@@ -24,7 +24,9 @@ public class MainMenu implements RPGMoodMenu {
     private static final int SLOT_FARMING = 14;
     private static final int SLOT_ANIMALS = 15;
     private static final int SLOT_RPGLOOT = 16;
+    private static final int SLOT_LEVEL = 20;
     private static final int SLOT_SETTINGS = 22;
+    private static final int SLOT_ADMIN_CONFIG = 24;
 
     private final RPGMoodPlugin plugin;
     private final Inventory inventory;
@@ -75,10 +77,27 @@ public class MainMenu implements RPGMoodMenu {
                             Component.text("and lifetime loot stats.", NamedTextColor.GRAY))));
         }
 
+        int level = plugin.getPlayerLevelService().getLevel(viewer);
+        long xp = plugin.getPlayerLevelService().getXp(viewer);
+        long xpForCurrent = com.okereke.rpgmood.PlayerLevelService.xpForLevel(level);
+        long xpForNext = com.okereke.rpgmood.PlayerLevelService.xpForLevel(level + 1);
+        inventory.setItem(SLOT_LEVEL, MenuUtil.icon(Material.EXPERIENCE_BOTTLE,
+                Component.text("✦ Level " + level, NamedTextColor.GREEN),
+                List.of(Component.text((xp - xpForCurrent) + " / " + (xpForNext - xpForCurrent) + " XP to next level", NamedTextColor.GRAY),
+                        Component.text("Earned from scaled-mob kills and", NamedTextColor.DARK_GRAY),
+                        Component.text("discovering new zones.", NamedTextColor.DARK_GRAY))));
+
         inventory.setItem(SLOT_SETTINGS, MenuUtil.icon(Material.COMPARATOR,
                 Component.text("⚙ Settings", NamedTextColor.AQUA),
                 List.of(Component.text("Ambient effects, zone titles, and", NamedTextColor.GRAY),
                         Component.text("action bar vs. chat delivery.", NamedTextColor.GRAY))));
+
+        if (viewer.hasPermission("rpgmood.admin")) {
+            inventory.setItem(SLOT_ADMIN_CONFIG, MenuUtil.icon(Material.REDSTONE,
+                    Component.text("🛠 Admin Config", NamedTextColor.RED),
+                    List.of(Component.text("Spawn radius, mob curve, night/", NamedTextColor.GRAY),
+                            Component.text("thunder bonus, weather effects.", NamedTextColor.GRAY))));
+        }
     }
 
     @Override
@@ -123,6 +142,12 @@ public class MainMenu implements RPGMoodMenu {
                 SettingsMenu settings = new SettingsMenu(plugin);
                 settings.renderFor(player);
                 player.openInventory(settings.getInventory());
+            }
+            case SLOT_ADMIN_CONFIG -> {
+                if (!player.hasPermission("rpgmood.admin")) return;
+                AdminConfigMenu adminConfig = new AdminConfigMenu(plugin);
+                adminConfig.render();
+                player.openInventory(adminConfig.getInventory());
             }
             default -> { }
         }

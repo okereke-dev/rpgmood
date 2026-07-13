@@ -114,7 +114,8 @@ public class AnimalInteractListener implements Listener {
 
         if (!plugin.getConfig().getBoolean("farming.animals.enabled", true)) return;
 
-        int maxPerPlayer = plugin.getConfig().getInt("farming.animals.max_per_player", 20);
+        int maxPerPlayer = plugin.getConfig().getInt("farming.animals.max_per_player", 20)
+                + plugin.getPlayerLevelService().getAnimalCapBonus(player);
         List<AnimalData> owned = manager.getOwnedAnimals(player.getUniqueId());
         if (owned.size() >= maxPerPlayer) {
             plugin.getMessageService().send(player, Component.text("You already have the maximum number of animals (" + maxPerPlayer + ").").color(NamedTextColor.RED));
