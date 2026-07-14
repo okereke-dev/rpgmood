@@ -103,10 +103,10 @@ mob_scaling:
   structure-bonuses:
     stronghold: 3
     desert_pyramid: 2
-    jungle_pyramid: 2
+    jungle_temple: 2
     woodland_mansion: 4
     ocean_monument: 4
-    nether_fortress: 3
+    fortress: 3
   # RPG-flavored mob modifiers rolled at spawn on top of numeric scaling — see the Mob Affix
   # System. Chance bands pick the highest threshold at or below the mob's level.
   affixes:

@@ -43,6 +43,7 @@ public class RPGMoodPlugin extends JavaPlugin {
     private ZoneScoreboardService zoneScoreboardService;
     private ZoneDiscoveryService zoneDiscoveryService;
     private PlayerLevelService playerLevelService;
+    private SubzoneManager subzoneManager;
     private boolean worldGuardActive;
 
     @Override
@@ -73,6 +74,7 @@ public class RPGMoodPlugin extends JavaPlugin {
         this.zoneScoreboardService = new ZoneScoreboardService(this);
         this.zoneDiscoveryService = new ZoneDiscoveryService(this);
         this.playerLevelService = new PlayerLevelService(this);
+        this.subzoneManager = new SubzoneManager(this);
 
         RPGMoodCommand rpgMoodCommand = new RPGMoodCommand(this);
         getCommand("rpgmood").setExecutor(rpgMoodCommand);
@@ -150,6 +152,7 @@ public class RPGMoodPlugin extends JavaPlugin {
     public ZoneScoreboardService getZoneScoreboardService() { return zoneScoreboardService; }
     public ZoneDiscoveryService getZoneDiscoveryService() { return zoneDiscoveryService; }
     public PlayerLevelService getPlayerLevelService() { return playerLevelService; }
+    public SubzoneManager getSubzoneManager() { return subzoneManager; }
 
     /** True if the location is inside the named WorldGuard region. Always false if WorldGuard isn't installed. */
     public boolean isInsideWorldGuardRegion(Location location, String regionId) {

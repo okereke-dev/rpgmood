@@ -706,9 +706,6 @@ public class ZoneManager {
             plugin.getPlayerLevelService().addXp(player, 15L);
         }
         plugin.getZoneScoreboardService().updateScoreboard(player);
-        int baseLevel = plugin.getMobScalingService().getBaseLevel(EntityType.ZOMBIE);
-        int danger = plugin.getMobScalingService().calculateLevelAt(player.getLocation(), baseLevel);
-        plugin.getZoneScoreboardService().showZoneBossBar(player, newDisplay, danger);
     }
 
     /** Gets the display name for a zone key, handling both configured and dynamic zones. */
@@ -887,7 +884,7 @@ public class ZoneManager {
      * legacy 16-color codes, so the tiers use the closest (or exact, for 4 of 5) legacy match
      * to RPGLoot's actual {@code Rarity} colors.
      */
-    private String getZoneDangerColorCode(Player player) {
+    String getZoneDangerColorCode(Player player) {
         if (plugin.getMobScalingService() == null) {
             return "&f";
         }

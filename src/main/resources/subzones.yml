@@ -1,0 +1,55 @@
+# ==========================================
+#        RPGMood - Subzone Configuration
+# ==========================================
+# Subzones are the cave biomes and vanilla structures a player finds *inside* a zone —
+# unlike zones.yml, entry keys under "entries" are fixed identifiers RPGMood already knows
+# how to detect (cave biomes, structure types), not something you add new ones to. Only the
+# "title" values are meant to be reskinned; renaming or adding entry keys here has no effect.
+
+subzones:
+  enabled: true
+  # Minimum time between subzone re-checks per player, in milliseconds. Keeps rapid movement
+  # (elytra, minecarts) from re-scanning biome/structure data on every single block crossed.
+  check_throttle_ms: 500
+  # Minimum time before the same subzone's Title can show again for a player, in minutes.
+  title_suppress_minutes: 3
+
+  caves:
+    # How many blocks below the surface heightmap a player must be before "no special cave
+    # biome" areas are considered a cave at all, rather than an open-air valley or ravine.
+    underground_surface_margin: 8
+    # At or below this Y level, plain-stone caves (no special biome) are "deep"; above it,
+    # "shallow". Matches the negative-Y deepslate layer introduced in the 1.18 world height rework.
+    deep_threshold_y: 0
+    entries:
+      LUSH_CAVES:
+        title: "&aThe Verdant Hollow"
+      DRIPSTONE_CAVES:
+        title: "&6The Dripping Expanse"
+      DEEP_DARK:
+        title: "&5The Silent Deep"
+      SHALLOW_CAVES:
+        title: "&7Shallow Caves"
+      DEEP_CAVES:
+        title: "&8The Deep Caves"
+
+  structures:
+    # How many chunks out from the player's own chunk to check, per axis (1 = a 3x3 area).
+    chunk_radius: 1
+    entries:
+      VILLAGE:
+        title: "&eVillage"
+      PILLAGER_OUTPOST:
+        title: "&cPillager Outpost"
+      DESERT_PYRAMID:
+        title: "&6Desert Pyramid"
+      JUNGLE_TEMPLE:
+        title: "&2Jungle Temple"
+      WOODLAND_MANSION:
+        title: "&4Woodland Mansion"
+      OCEAN_MONUMENT:
+        title: "&bOcean Monument"
+      NETHER_FORTRESS:
+        title: "&cNether Fortress"
+      STRONGHOLD:
+        title: "&5Stronghold"

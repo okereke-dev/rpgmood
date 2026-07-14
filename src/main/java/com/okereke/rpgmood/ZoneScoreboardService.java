@@ -1,6 +1,5 @@
 package com.okereke.rpgmood;
 
-import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -16,13 +15,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Optional sidebar scoreboard (current zone, local danger, session kills) and a temporary
- * BossBar shown on zone change. Both are purely visual — no persisted state, session kills
- * reset on rejoin.
+ * Optional sidebar scoreboard showing current zone, local danger, and session kills. Purely
+ * visual — no persisted state, session kills reset on rejoin.
  */
 public class ZoneScoreboardService {
-
-    private static final long BOSSBAR_DURATION_TICKS = 80L; // 4 seconds
 
     private final RPGMoodPlugin plugin;
     private final Map<UUID, Integer> sessionKills = new HashMap<>();
@@ -67,24 +63,6 @@ public class ZoneScoreboardService {
     public void incrementSessionKills(Player player) {
         sessionKills.merge(player.getUniqueId(), 1, Integer::sum);
         updateScoreboard(player);
-    }
-
-    /** Shows a temporary BossBar with the zone name, colored the same as its title, for a few seconds. */
-    public void showZoneBossBar(Player player, String zoneName, int dangerLevel) {
-        if (!isEnabled(player)) return;
-
-        BossBar.Color color = bossBarColorFor(dangerLevel);
-        BossBar bossBar = BossBar.bossBar(Component.text(zoneName, NamedTextColor.WHITE), 1.0f, color, BossBar.Overlay.PROGRESS);
-        player.showBossBar(bossBar);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> player.hideBossBar(bossBar), BOSSBAR_DURATION_TICKS);
-    }
-
-    private BossBar.Color bossBarColorFor(int level) {
-        if (level <= 3) return BossBar.Color.WHITE;    // Common
-        if (level <= 9) return BossBar.Color.YELLOW;   // Uncommon
-        if (level <= 17) return BossBar.Color.PURPLE;  // Rare
-        if (level <= 27) return BossBar.Color.GREEN;   // Hero
-        return BossBar.Color.PINK;                     // Legendary
     }
 
     /** Clears in-memory session state when a player disconnects. */

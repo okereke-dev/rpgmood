@@ -21,11 +21,13 @@ public class ZoneListener implements Listener {
             return;
         }
         plugin.getZoneManager().handlePlayerZone(event.getPlayer());
+        plugin.getSubzoneManager().handlePlayerMove(event.getPlayer());
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         plugin.getZoneManager().handlePlayerQuit(event.getPlayer());
         plugin.getZoneScoreboardService().remove(event.getPlayer().getUniqueId());
+        plugin.getSubzoneManager().handlePlayerQuit(event.getPlayer());
     }
 }

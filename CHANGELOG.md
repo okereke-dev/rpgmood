@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.9.0] — 2026-07-13
+
+### Added
+- **Subzones — cave biomes and vanilla structures now get their own Title/Subtitle inside a zone.** Standing in a Lush Caves/Dripstone Caves/Deep Dark pocket, or near a Village/Pillager Outpost/Desert Pyramid/Jungle Temple/Woodland Mansion/Ocean Monument/Nether Fortress/Stronghold, shows a two-line Title (subzone name large, current zone as smaller context underneath) — reskinnable per-subzone in the new `subzones.yml`. Detected via Paper's `Chunk#getStructures()` (already-generated structure data, no expensive radius scan) and real 3D biome reads, with a Y-level "Shallow Caves"/"Deep Caves" fallback for plain stone underground. Purely a flavor layer: no XP, no achievement progress, and no `/rpgmood zones` entries come from subzones — zone discovery, leaderboard, and achievement behavior are completely unchanged.
+
+### Removed
+- **The temporary zone-change BossBar** (from v1.8.0's scoreboard/BossBar pair) — replaced by the new subzone Title choreography above. The persistent sidebar scoreboard (`/rpgmood toggle scoreboard`) is unaffected and still shows zone/danger/kills exactly as before.
+
+### Fixed
+- **Two structure-based mob difficulty bonuses were silently dead.** `config.yml`'s `mob_scaling.structure-bonuses` used the keys `jungle_pyramid` and `nether_fortress`, but the code resolves these against Minecraft's `StructureType` registry, whose real keys are `jungle_temple` and `fortress` — so mobs near a Jungle Temple or Nether Fortress never actually got their configured bonus. Renamed to the correct keys; `stronghold`/`desert_pyramid`/`woodland_mansion`/`ocean_monument` were already correct and unaffected.
+
 ## [1.8.0] — 2026-07-13
 
 ### Added

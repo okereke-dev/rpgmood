@@ -12,6 +12,7 @@ public class ConfigManager {
     private FileConfiguration config;
     private FileConfiguration zones;
     private FileConfiguration triggers;
+    private FileConfiguration subzones;
 
     public ConfigManager(RPGMoodPlugin plugin) {
         this.plugin = plugin;
@@ -26,10 +27,13 @@ public class ConfigManager {
 
         ConfigMerge.mergeAndSave(plugin, "zones.yml");
         ConfigMerge.mergeAndSave(plugin, "triggers.yml");
+        ConfigMerge.mergeAndSave(plugin, "subzones.yml");
         File zonesFile = new File(plugin.getDataFolder(), "zones.yml");
         File triggersFile = new File(plugin.getDataFolder(), "triggers.yml");
+        File subzonesFile = new File(plugin.getDataFolder(), "subzones.yml");
         this.zones = YamlConfiguration.loadConfiguration(zonesFile);
         this.triggers = YamlConfiguration.loadConfiguration(triggersFile);
+        this.subzones = YamlConfiguration.loadConfiguration(subzonesFile);
     }
 
     public FileConfiguration getConfigValues() {
@@ -44,10 +48,15 @@ public class ConfigManager {
         return triggers;
     }
 
+    public FileConfiguration getSubzones() {
+        return subzones;
+    }
+
     public void saveDefaultConfigs() {
         plugin.saveDefaultConfig();
         plugin.saveResource("zones.yml", false);
         plugin.saveResource("triggers.yml", false);
+        plugin.saveResource("subzones.yml", false);
     }
 
     /** Persists a single player toggle (effects/titles) to the config file without rewriting the entire document. */
