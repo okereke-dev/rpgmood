@@ -1,10 +1,7 @@
 package com.okereke.rpgmood;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Particle;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -13,16 +10,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 public class ZoneManager {
 
-    private static final int ZONE_SIZE = 256;
-    private static final String DYNAMIC_ZONE_PREFIX = "DYNAMIC_ZONE";
+    /** Prefix for zone keys resolved by ZoneClusterService (organic, persisted zone clusters) rather than curated zones.yml entries. */
+    public static final String CLUSTER_ZONE_PREFIX = "CLUSTER_ZONE";
     private static final String DEFAULT_SOUND = "ambient.weather.wind_light";
-    private static final int MAX_ASSIGNED_ZONE_NAMES = 2000;
 
     /** How long a player must stay in a new zone before feedback fires — filters out border pacing and fast pass-throughs. */
     private static final long NORMAL_DWELL_MILLIS = 1500L;
@@ -38,12 +34,6 @@ public class ZoneManager {
     private final Map<UUID, String> pendingZones = new HashMap<>();
     private final Map<UUID, org.bukkit.scheduler.BukkitTask> pendingTasks = new HashMap<>();
     private final Map<UUID, LinkedHashMap<String, Long>> recentTitleShownAt = new HashMap<>();
-    private final Map<String, String> assignedZoneNames = new LinkedHashMap<>(256, 0.75f, true) {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-            return size() > MAX_ASSIGNED_ZONE_NAMES;
-        }
-    };
 
     private static final Map<String, String> BIOME_GROUP = Map.ofEntries(
             Map.entry("SUNFLOWER_PLAINS", "PLAINS"),
@@ -560,6 +550,37 @@ public class ZoneManager {
         }
     }
 
+    /**
+     * A third, independently-authored word bank per biome group — a middle "descriptor" segment
+     * combined with BIOME_ADJECTIVES/BIOME_NOUNS to build 3-part zone names (e.g. "Whispering
+     * Ashen Hollow") instead of 2-part ones. Unlike those two maps, these are hand-written
+     * directly rather than split out of BIOME_NAME_POOLS — adding one ~15-word list here
+     * multiplies the combinatorial name space for a group far more than doubling either existing
+     * list would (adjectives x descriptors x nouns instead of just adjectives x nouns).
+     */
+    private static final Map<String, List<String>> BIOME_DESCRIPTORS = Map.ofEntries(
+            Map.entry("PLAINS", List.of("Sunlit", "Windswept", "Golden", "Dew-Kissed", "Wheatstrewn", "Meadow-Bright", "Breezy", "Open-Sky", "Wildflower", "Amber-Lit", "Rolling", "Sunwarmed", "Grassy", "Wind-Carved", "Honeytouched", "Pastoral")),
+            Map.entry("FOREST", List.of("Mossy", "Shaded", "Leaf-Strewn", "Ancient", "Fern-Choked", "Timberdeep", "Sunlit-Canopy", "Root-Bound", "Whispering", "Emerald", "Bark-Scarred", "Deep-Rooted", "Overgrown", "Verdant", "Wild", "Hollow-Touched")),
+            Map.entry("DARK_FOREST", List.of("Shadow-Cloaked", "Grim", "Twisted", "Nightbound", "Thornveiled", "Moonless", "Grave", "Hollow", "Sinister", "Witchbound", "Bramble-Choked", "Silent", "Fell", "Umbral", "Dread-Touched", "Grim-Rooted")),
+            Map.entry("TAIGA", List.of("Frost-Kissed", "Pine-Cloaked", "Boreal", "Snowlit", "Icebound", "Windbitten", "Silver-Frosted", "Coldwrought", "Timbered", "Winterbound", "Rime-Touched", "Frosty", "Needle-Strewn", "Shivering", "Hoarfrost", "Northwind")),
+            Map.entry("SNOWY_TAIGA", List.of("Frozen", "Glacial", "Ice-Veiled", "Blizzardswept", "Snowbound", "Frostbitten", "Hollow-White", "Pale", "Winterfrost", "Icewrought", "Whiteout", "Frost-Locked", "Arctic", "Rime-Bound", "Snowdrift", "Numbing")),
+            Map.entry("JUNGLE", List.of("Vine-Choked", "Lush", "Humid", "Canopy-Veiled", "Overgrown", "Mist-Shrouded", "Emerald-Deep", "Wild", "Fern-Tangled", "Sweltering", "Rootbound", "Verdant-Thick", "Untamed", "Bloomheavy", "Moss-Draped", "Rainsoaked")),
+            Map.entry("SWAMP", List.of("Mire-Sunk", "Murky", "Fog-Bound", "Rot-Touched", "Bogsoaked", "Reed-Choked", "Marshbound", "Stagnant", "Mudslick", "Mosswater", "Gloomy", "Fen-Deep", "Waterlogged", "Peat-Dark", "Brackish", "Damp")),
+            Map.entry("DESERT", List.of("Sun-Scorched", "Windblasted", "Duststrewn", "Mirage-Haunted", "Sandbound", "Blazing", "Dunewrought", "Cracked", "Arid", "Heatworn", "Sunbaked", "Bonedry", "Scoured", "Glassbound", "Shimmering", "Windswept")),
+            Map.entry("BADLANDS", List.of("Ironscar", "Sundered", "Cracked-Earth", "Rustbound", "Copperveined", "Ochre-Streaked", "Wind-Carved", "Sunburnt", "Stonebroken", "Claybound", "Dustworn", "Redrock", "Weathered", "Scoured", "Ashenred", "Barren")),
+            Map.entry("MOUNTAINS", List.of("Stormcrest", "Windbitten", "Skyhigh", "Cragbound", "Stonewrought", "Cloudveiled", "Granite-Bound", "Steep", "Rugged", "Frostpeaked", "Boulderstrewn", "Windswept", "Echoing", "Precipice-Bound", "Sheer", "Thundercrowned")),
+            Map.entry("OCEAN", List.of("Tideborn", "Salt-Kissed", "Deepbound", "Wavecrest", "Foamtouched", "Current-Swept", "Abyssal", "Driftbound", "Stormtossed", "Coralbound", "Brinewrought", "Sunkissed", "Depthless", "Glimmering", "Tidal", "Windswept")),
+            Map.entry("RIVER", List.of("Silverflow", "Meander-Bound", "Rushing", "Bankworn", "Riffled", "Streambound", "Winding", "Clearwater", "Fastflow", "Mossbank", "Rapid-Carved", "Gentle", "Ripplebound", "Freshbound", "Stonebed", "Wandering")),
+            Map.entry("BEACH", List.of("Tideswept", "Sunwashed", "Shellbound", "Driftwood-Strewn", "Foamkissed", "Windblown", "Sandworn", "Coastbound", "Salt-Touched", "Sunbleached", "Waveworn", "Glimmering", "Shorebound", "Breezy", "Golden-Sand", "Tidal")),
+            Map.entry("NETHER_WASTES", List.of("Ashbound", "Emberlit", "Scorchbound", "Sulfurwreathed", "Cinderstrewn", "Fireborn", "Bleak", "Charwrought", "Smolderbound", "Heatworn", "Ruinbound", "Ashen", "Firelit", "Blistered", "Wastebound", "Grim")),
+            Map.entry("NETHER_CRIMSON", List.of("Bloodlit", "Fungal-Veiled", "Crimsonbound", "Fleshbound", "Pulsating", "Warped-Red", "Hungerbound", "Bloomdark", "Vein-Wrought", "Sanguine", "Growthbound", "Scarletlit", "Thornveiled", "Wetbound", "Feral", "Rawbound")),
+            Map.entry("NETHER_WARPED", List.of("Sporeveiled", "Glowbound", "Eerielit", "Fungal-Touched", "Twistbound", "Uncanny", "Ghostlit", "Neonveiled", "Silent", "Hazebound", "Strangelit", "Mistwarped", "Cyanbound", "Hollowlit", "Driftbound", "Otherworldly")),
+            Map.entry("NETHER_BASALT", List.of("Ashen-Stone", "Obsidianbound", "Steamveiled", "Cragbound", "Charcoal", "Smolderstone", "Blackrock", "Fissurebound", "Heatwrought", "Stonewreathed", "Sulfurbound", "Rockscarred", "Cindercrowned", "Grim-Stone", "Basaltic", "Chasmbound")),
+            Map.entry("NETHER_SOUL", List.of("Whisperbound", "Ashen-Pale", "Soulbound", "Hollowlit", "Duskveiled", "Wraithbound", "Coldash", "Sorrowbound", "Palewreathed", "Echobound", "Grievebound", "Mournlit", "Ghostveiled", "Duststrewn", "Spectral", "Hushbound")),
+            Map.entry("MUSHROOM", List.of("Glowcapped", "Sporeveiled", "Fungal-Bright", "Mistbound", "Luminous", "Mycelbound", "Softlit", "Dreambound", "Gentlebloom", "Twilightlit", "Mossbright", "Whimsical", "Glowbound", "Softbloom", "Hazelit", "Wonderbound")),
+            Map.entry("END", List.of("Starbound", "Voidtouched", "Silent", "Etherbound", "Cosmic", "Driftbound", "Shardlit", "Eternal", "Hollowbound", "Astral", "Farbound", "Echobound", "Dreamlit", "Endless", "Stillbound", "Twilit"))
+    );
+
     private static final Map<String, String> BIOME_SUBTITLES = Map.ofEntries(
             Map.entry("PLAINS", "Where the wind whispers secrets..."),
             Map.entry("FOREST", "The canopy hides old stories..."),
@@ -690,7 +711,7 @@ public class ZoneManager {
         plugin.getAchievementManager().onZoneVisited(player, currentZone);
 
         // Fire API event
-        boolean isDynamic = currentZone.startsWith(DYNAMIC_ZONE_PREFIX);
+        boolean isDynamic = currentZone.startsWith(CLUSTER_ZONE_PREFIX);
         String newDisplay = getZoneDisplayName(currentZone, player);
         com.okereke.rpgmood.api.PlayerZoneChangeEvent event = new com.okereke.rpgmood.api.PlayerZoneChangeEvent(
                 player, previousZone, currentZone, previousDisplay, newDisplay, isDynamic);
@@ -708,14 +729,12 @@ public class ZoneManager {
         plugin.getZoneScoreboardService().updateScoreboard(player);
     }
 
-    /** Gets the display name for a zone key, handling both configured and dynamic zones. */
+    /** Gets the display name for a zone key. */
     private String getZoneDisplayName(String zoneKey, Player player) {
-        var section = plugin.getConfigManager().getZones().getConfigurationSection("zones." + zoneKey);
-        if (section != null) {
-            return org.bukkit.ChatColor.stripColor(
-                    org.bukkit.ChatColor.translateAlternateColorCodes('&', section.getString("title", zoneKey)));
+        if (zoneKey.startsWith(CLUSTER_ZONE_PREFIX)) {
+            return plugin.getZoneClusterService().getDisplayName(zoneKey);
         }
-        return getDynamicZoneTitle(player, zoneKey);
+        return zoneKey;
     }
 
     /** Gates the big Title/Subtitle behind its own per-player opt-out and a longer "seen recently" memory than the ambient cooldown. */
@@ -747,68 +766,23 @@ public class ZoneManager {
             return "Unknown";
         }
 
-        var section = plugin.getConfigManager().getZones().getConfigurationSection("zones." + currentZone);
-        if (section != null) {
-            String title = section.getString("title", currentZone);
-            return ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', title));
+        if (currentZone.startsWith(CLUSTER_ZONE_PREFIX)) {
+            return plugin.getZoneClusterService().getDisplayName(currentZone);
         }
-        return getDynamicZoneTitle(player, currentZone);
+        return currentZone;
     }
 
     private String getCurrentZone(Player player) {
-        String currentBiome = player.getLocation().getBlock().getBiome().name().toUpperCase(Locale.ROOT);
-        String biomeGroup = normalizeBiomeGroup(currentBiome);
-
-        var zonesSection = plugin.getConfigManager().getZones().getConfigurationSection("zones");
-        if (zonesSection != null) {
-            for (String zoneName : zonesSection.getKeys(false)) {
-                var section = plugin.getConfigManager().getZones().getConfigurationSection("zones." + zoneName);
-                if (section == null) {
-                    continue;
-                }
-
-                String type = section.getString("type", "BIOME");
-                String id = section.getString("id");
-                if (id == null) {
-                    continue;
-                }
-
-                if ("BIOME".equalsIgnoreCase(type) && isBiomeMatch(id, currentBiome)) {
-                    return zoneName;
-                }
-                if ("WORLDGUARD".equalsIgnoreCase(type) && plugin.isInsideWorldGuardRegion(player.getLocation(), id)) {
-                    return zoneName;
-                }
-            }
+        String clusterZone = plugin.getZoneClusterService().resolveClusterZone(player);
+        if (clusterZone != null) {
+            return clusterZone;
         }
-
-        int regionX = Math.floorDiv(player.getLocation().getBlockX(), ZONE_SIZE);
-        int regionZ = Math.floorDiv(player.getLocation().getBlockZ(), ZONE_SIZE);
-        String worldName = player.getWorld().getName();
-        return String.format("%s|%s|%s|%d|%d", DYNAMIC_ZONE_PREFIX, biomeGroup, worldName, regionX, regionZ);
-    }
-
-    private void spawnZoneParticles(Player player, String particleName) {
-        if (particleName == null || particleName.isBlank() || "NONE".equalsIgnoreCase(particleName)) {
-            return;
-        }
-        try {
-            Particle particle = Particle.valueOf(particleName.toUpperCase(Locale.ROOT));
-            player.getWorld().spawnParticle(particle, player.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5, 0.02);
-        } catch (IllegalArgumentException ex) {
-            // Unknown particle name in zones.yml — skip silently rather than spam the console on every zone entry.
-        }
-    }
-
-    private boolean isBiomeMatch(String configuredId, String currentBiome) {
-        String normalizedConfigured = configuredId.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
-        if (normalizedConfigured.equals(currentBiome)) {
-            return true;
-        }
-        // Check for underscore-delimited token matches to avoid false positives (e.g. "FOR" matching "FOREST")
-        String configuredToken = "_" + normalizedConfigured + "_";
-        String biomeToken = "_" + currentBiome + "_";
-        return configuredToken.contains(biomeToken) || biomeToken.contains(configuredToken);
+        // Cluster creation was throttled this tick — hold the player's last confirmed (or
+        // still-pending) zone rather than resolving nothing; equal to the previous value makes
+        // handlePlayerZone's own first check a no-op, so no zone-change fires from this.
+        UUID heldId = player.getUniqueId();
+        String held = lastZones.get(heldId);
+        return held != null ? held : pendingZones.get(heldId);
     }
 
     /**
@@ -819,31 +793,23 @@ public class ZoneManager {
      * nothing else in the plugin ever contends for.
      */
     private void sendZoneFeedback(Player player, String zoneName, boolean showTitle) {
-        var section = plugin.getConfigManager().getZones().getConfigurationSection("zones." + zoneName);
         String titleText;
         String subtitleText;
         String sound;
 
-        if (section != null) {
-            titleText = section.getString("title", "");
-            sound = section.getString("sound", DEFAULT_SOUND);
-
-            List<String> subtitlePool = new ArrayList<>();
-            String configuredSubtitle = section.getString("subtitle", "");
-            if (!configuredSubtitle.isBlank()) {
-                subtitlePool.add(configuredSubtitle);
-            }
-            subtitlePool.addAll(section.getStringList("flavor_texts"));
-            subtitleText = pickSubtitle(player, subtitlePool);
-        } else {
-            titleText = getDynamicZoneTitle(player, zoneName);
+        if (zoneName.startsWith(CLUSTER_ZONE_PREFIX)) {
+            titleText = plugin.getZoneClusterService().getDisplayName(zoneName);
             sound = DEFAULT_SOUND;
 
-            String biomeGroup = normalizeBiomeGroup(player.getLocation().getBlock().getBiome().name().toUpperCase(Locale.ROOT));
+            String flavorGroup = plugin.getZoneClusterService().getFlavorGroup(zoneName);
             List<String> subtitlePool = new ArrayList<>();
-            subtitlePool.add(BIOME_SUBTITLES.getOrDefault(biomeGroup, "A strange new land stretches forth..."));
-            subtitlePool.addAll(BIOME_FLAVOR_TEXTS.getOrDefault(biomeGroup, List.of()));
+            subtitlePool.add(BIOME_SUBTITLES.getOrDefault(flavorGroup, "A strange new land stretches forth..."));
+            subtitlePool.addAll(BIOME_FLAVOR_TEXTS.getOrDefault(flavorGroup, List.of()));
             subtitleText = pickSubtitle(player, subtitlePool);
+        } else {
+            titleText = zoneName;
+            sound = DEFAULT_SOUND;
+            subtitleText = pickSubtitle(player, List.of());
         }
 
         String strippedTitle = ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', titleText));
@@ -858,18 +824,6 @@ public class ZoneManager {
             }
         }
         player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
-
-        if (section != null) {
-            spawnZoneParticles(player, section.getString("particles", "NONE"));
-
-            // Optional per-zone theme, played once on entry (not looped, so there's no
-            // "am I still in this zone" state to track). Namespaced sound key so resource
-            // packs can supply their own music without touching config.yml.
-            String music = section.getString("music", "");
-            if (!music.isBlank()) {
-                player.playSound(player.getLocation(), music, org.bukkit.SoundCategory.MUSIC, 1.0f, 1.0f);
-            }
-        }
 
         if (!titleText.isBlank()) {
             plugin.getPlayerJournalService().addEntry(player, "Arrived at " + legacyTitle + ChatColor.RESET + ".");
@@ -906,32 +860,43 @@ public class ZoneManager {
         return candidates.get(index);
     }
 
-    private String getDynamicZoneTitle(Player player, String zoneName) {
-        return assignedZoneNames.computeIfAbsent(zoneName, key -> createUniqueZoneName(player, key));
-    }
-
-    private String createUniqueZoneName(Player player, String zoneName) {
-        String biomeGroup = normalizeBiomeGroup(player.getLocation().getBlock().getBiome().name().toUpperCase(Locale.ROOT));
+    /**
+     * Deterministic adjective/descriptor/noun name generator, seeded by a stable string, scoped
+     * to a biome group. {@code isTaken} is the uniqueness oracle — callers own where "already
+     * assigned" state lives (ZoneClusterService keeps a full, non-evicting name set for
+     * persisted clusters, since their names are permanent) rather than this method dictating it.
+     * Tries the full 3-way combinatorial space first (adjective x descriptor x noun — see
+     * BIOME_DESCRIPTORS), falls back to a numeric suffix if the whole space is exhausted.
+     */
+    public String createUniqueZoneName(String biomeGroup, String seedKey, Predicate<String> isTaken) {
         List<String> adjectives = BIOME_ADJECTIVES.getOrDefault(biomeGroup, BIOME_ADJECTIVES.get("PLAINS"));
+        List<String> descriptors = BIOME_DESCRIPTORS.getOrDefault(biomeGroup, BIOME_DESCRIPTORS.get("PLAINS"));
         List<String> nouns = BIOME_NOUNS.getOrDefault(biomeGroup, BIOME_NOUNS.get("PLAINS"));
 
-        int seed = Math.abs(zoneName.hashCode());
-        int totalCombinations = adjectives.size() * nouns.size();
+        int seed = Math.abs(seedKey.hashCode());
+        int descriptorNounCombos = descriptors.size() * nouns.size();
+        int totalCombinations = adjectives.size() * descriptorNounCombos;
 
         for (int attempt = 0; attempt < totalCombinations; attempt++) {
             int combinedIndex = (seed + attempt) % totalCombinations;
-            String candidate = adjectives.get(combinedIndex / nouns.size()) + " " + nouns.get(combinedIndex % nouns.size());
-            if (!assignedZoneNames.containsValue(candidate)) {
+            int adjIndex = combinedIndex / descriptorNounCombos;
+            int remainder = combinedIndex % descriptorNounCombos;
+            int descIndex = remainder / nouns.size();
+            int nounIndex = remainder % nouns.size();
+            String candidate = adjectives.get(adjIndex) + " " + descriptors.get(descIndex) + " " + nouns.get(nounIndex);
+            if (!isTaken.test(candidate)) {
                 return candidate;
             }
         }
 
-        // Every adjective/noun combination for this biome is already in use somewhere on the server — fall
-        // back to a numeric suffix rather than looping forever.
-        String baseName = adjectives.get(seed % adjectives.size()) + " " + nouns.get(seed % nouns.size());
+        // The entire adjective x descriptor x noun space for this biome is already in use
+        // somewhere on the server — fall back to a numeric suffix rather than looping forever.
+        String baseName = adjectives.get(seed % adjectives.size()) + " "
+                + descriptors.get(seed % descriptors.size()) + " "
+                + nouns.get(seed % nouns.size());
         String candidate = baseName;
         int suffix = 2;
-        while (assignedZoneNames.containsValue(candidate)) {
+        while (isTaken.test(candidate)) {
             candidate = baseName + " " + suffix;
             suffix++;
         }
@@ -949,5 +914,52 @@ public class ZoneManager {
 
     public static String normalizeBiomeGroup(String biomeKey) {
         return BIOME_GROUP.getOrDefault(biomeKey, biomeKey);
+    }
+
+    // Climate thresholds for resolveNamingBiomeGroup. 0.15 matches vanilla's own rain/snow
+    // cutoff; the other three are judgment calls — retune here if a biome ends up feeling
+    // miscategorized in practice.
+    private static final double CLIMATE_FROZEN_MAX_TEMP = 0.15;
+    private static final double CLIMATE_MILD_MAX_TEMP = 0.5;
+    private static final double CLIMATE_HOT_MIN_TEMP = 1.0;
+    private static final double CLIMATE_WET_MIN_HUMIDITY = 0.35;
+
+    /**
+     * Resolves which existing name-pool to borrow from for a biome with no dedicated pool of its
+     * own — either a vanilla variant never added to BIOME_GROUP (Savanna, Windswept Hills
+     * family, Cherry Grove, Wooded Badlands, Sparse Jungle, deep ocean variants, etc. all hit
+     * this today) or a datapack/mod biome RPGMood has never seen. Checked in order: (1) does the
+     * biome already have a dedicated pool via BIOME_GROUP? use it, zero change from today's
+     * behavior. (2) obvious water-biome keyword in the raw name? borrow that pool. (3) bucket by
+     * real temperature/humidity (RegionAccessor#getTemperature/getHumidity) into the
+     * closest-themed existing pool — never a new pool, just an existing one that actually fits
+     * the biome's climate instead of always silently defaulting to Plains.
+     */
+    public static String resolveNamingBiomeGroup(String rawBiomeName, double temperature, double humidity) {
+        String group = normalizeBiomeGroup(rawBiomeName);
+        if (BIOME_ADJECTIVES.containsKey(group)) {
+            return group;
+        }
+        if (rawBiomeName.contains("OCEAN")) {
+            return "OCEAN";
+        }
+        if (rawBiomeName.contains("RIVER")) {
+            return "RIVER";
+        }
+        if (rawBiomeName.contains("BEACH") || rawBiomeName.contains("SHORE")) {
+            return "BEACH";
+        }
+
+        boolean wet = humidity >= CLIMATE_WET_MIN_HUMIDITY;
+        if (temperature < CLIMATE_FROZEN_MAX_TEMP) {
+            return "SNOWY_TAIGA";
+        }
+        if (temperature < CLIMATE_MILD_MAX_TEMP) {
+            return wet ? "TAIGA" : "MOUNTAINS";
+        }
+        if (temperature < CLIMATE_HOT_MIN_TEMP) {
+            return wet ? "FOREST" : "PLAINS";
+        }
+        return wet ? "JUNGLE" : "DESERT";
     }
 }

@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.0] — 2026-07-15
+
+### Added
+- **Organic zone clusters (Phase 2)** — replaces the old fixed 256×256 dynamic-zone grid. The first time a player reaches an uncovered chunk, a bounded flood-fill claims already-loaded neighboring chunks that share its biome group, assigns a permanent 3-part name, and persists it to `dynamiczones.yml`. Clusters never grow or merge after creation. Configurable via `dynamic_zones.max_cluster_chunks` / `creation_throttle_ms`.
+- **Optional Squaremap integration** — when [squaremap](https://github.com/jpenilla/squaremap) is installed, each zone cluster is drawn on the web map as a borderless semi-transparent rectangle colored by local danger, with the zone name on hover (`square_map` in `config.yml`).
+
+### Fixed
+- **Plugin failed to enable without Squaremap** — constructing `SquareMapHook` always loaded squaremap-api classes, causing `NoClassDefFoundError: Marker` when Squaremap wasn't installed. The hook is now only loaded if the `squaremap` plugin is present.
+
+### Removed
+- **Curated `zones.yml` + WorldGuard zone type** — wilderness is now entirely cluster-driven; WorldGuard is no longer a softdepend.
+- **`weather_effects` (fog/wind during storms)** — removed from `config.yml` and ambient tick logic.
+
 ## [1.9.0] — 2026-07-13
 
 ### Added

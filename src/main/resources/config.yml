@@ -6,6 +6,26 @@ settings:
   zone_change_cooldown: 45
   particle_update_interval: 40
 
+# Organic, permanently-persisted zone clusters — replaces the old fixed grid for "unclaimed"
+# wilderness (see zones.yml for the curated zones checked first). A cluster is created once,
+# the first time a player reaches a chunk with no existing zone, by flood-filling every
+# already-loaded neighboring chunk that shares its biome — it never grows or shrinks after.
+dynamic_zones:
+  # Max chunks a single flood-fill will claim into one cluster (24x24 chunks ~= 384x384 blocks).
+  max_cluster_chunks: 576
+  # Minimum time between a single player's own cluster *creations*, in milliseconds. Only
+  # gates creating a brand-new cluster for a never-before-seen chunk — looking up a chunk
+  # that's already part of a known cluster is never throttled. Keeps fast traversal (elytra)
+  # from flood-filling many times per second.
+  creation_throttle_ms: 750
+
+# Optional SquareMap integration (https://github.com/jpenilla/squaremap) — draws each zone
+# cluster as a borderless, semi-transparent rectangle on the web map, colored by local danger,
+# with the zone name shown on hover. No effect if SquareMap isn't installed.
+square_map:
+  layer_priority: 3
+  zone_fill_opacity: 0.18
+
 # Low-probability flavor sound played near each player, checked every ~1s (20 ticks): birds
 # by day, eerie ambience by night. Purely cosmetic, no chat/action-bar message. Swap in your
 # own sound keys (including resource-pack custom ones) freely.
@@ -16,16 +36,6 @@ ambient_sounds:
     - "entity.parrot.ambient"
   night:
     - "ambient.cave"
-
-# Mechanical effects while a storm is actually live (checked against the world's real weather
-# state each ~1s tick, not tied to the one-shot start/stop messages in triggers.yml).
-weather_effects:
-  enabled: true
-  # Chance per player per check, while thundering, to apply a brief Darkness pulse (fog feel).
-  fog_chance: 0.05
-  # Chance per player per check, while storming and standing under open sky, to get nudged by wind.
-  wind_chance: 0.03
-  wind_strength: 0.15
 
 messages:
   # Delivery mode for ambient messages: CHAT (traditional) or ACTION_BAR (non-intrusive overlay, default)

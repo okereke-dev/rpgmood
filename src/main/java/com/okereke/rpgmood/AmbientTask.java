@@ -37,7 +37,6 @@ public class AmbientTask extends BukkitRunnable {
             checkTimeEvents(player);
             checkWeatherEvents(player);
             checkAmbientSounds(player);
-            checkStormEffects(player);
             checkNetherEvents(player);
         }
 
@@ -181,36 +180,6 @@ public class AmbientTask extends BukkitRunnable {
 
         String sound = sounds.get(random.nextInt(sounds.size()));
         player.playSound(player.getLocation(), sound, 0.5f, 1.0f);
-    }
-
-    /**
-     * Mechanical weather effects while a storm is live — checked against the world's actual
-     * live weather state each tick rather than one-shot start/stop triggers, so there's no
-     * separate state to track or accidentally leave active if a storm ends unusually.
-     */
-    private void checkStormEffects(Player player) {
-        if (!plugin.getConfig().getBoolean("weather_effects.enabled", true)) {
-            return;
-        }
-        World world = player.getWorld();
-
-        if (world.isThundering()) {
-            double fogChance = plugin.getConfig().getDouble("weather_effects.fog_chance", 0.05);
-            if (random.nextDouble() < fogChance) {
-                player.addPotionEffect(new org.bukkit.potion.PotionEffect(
-                        org.bukkit.potion.PotionEffectType.DARKNESS, 60, 0, true, false));
-            }
-        }
-
-        if (world.hasStorm()) {
-            double windChance = plugin.getConfig().getDouble("weather_effects.wind_chance", 0.03);
-            if (random.nextDouble() < windChance && player.getLocation().getBlock().getLightFromSky() > 0) {
-                double strength = plugin.getConfig().getDouble("weather_effects.wind_strength", 0.15);
-                double angle = random.nextDouble() * Math.PI * 2;
-                player.setVelocity(player.getVelocity().add(new org.bukkit.util.Vector(
-                        Math.cos(angle) * strength, 0, Math.sin(angle) * strength)));
-            }
-        }
     }
 
     /** Nether-only ambient hazard — there's no vanilla weather there, so this is a standalone chance-based trigger instead of a weather_events entry. */

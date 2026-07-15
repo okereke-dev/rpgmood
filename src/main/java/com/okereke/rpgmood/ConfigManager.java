@@ -10,7 +10,6 @@ public class ConfigManager {
 
     private final RPGMoodPlugin plugin;
     private FileConfiguration config;
-    private FileConfiguration zones;
     private FileConfiguration triggers;
     private FileConfiguration subzones;
 
@@ -25,23 +24,16 @@ public class ConfigManager {
         plugin.getConfig().options().copyDefaults(true);
         this.config = plugin.getConfig();
 
-        ConfigMerge.mergeAndSave(plugin, "zones.yml");
         ConfigMerge.mergeAndSave(plugin, "triggers.yml");
         ConfigMerge.mergeAndSave(plugin, "subzones.yml");
-        File zonesFile = new File(plugin.getDataFolder(), "zones.yml");
         File triggersFile = new File(plugin.getDataFolder(), "triggers.yml");
         File subzonesFile = new File(plugin.getDataFolder(), "subzones.yml");
-        this.zones = YamlConfiguration.loadConfiguration(zonesFile);
         this.triggers = YamlConfiguration.loadConfiguration(triggersFile);
         this.subzones = YamlConfiguration.loadConfiguration(subzonesFile);
     }
 
     public FileConfiguration getConfigValues() {
         return config;
-    }
-
-    public FileConfiguration getZones() {
-        return zones;
     }
 
     public FileConfiguration getTriggers() {
@@ -54,7 +46,6 @@ public class ConfigManager {
 
     public void saveDefaultConfigs() {
         plugin.saveDefaultConfig();
-        plugin.saveResource("zones.yml", false);
         plugin.saveResource("triggers.yml", false);
         plugin.saveResource("subzones.yml", false);
     }

@@ -18,7 +18,6 @@ import com.okereke.rpgmood.mob.MobAffixCombatListener;
 import com.okereke.rpgmood.mob.MobAffixService;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class RPGMoodPlugin extends JavaPlugin {
@@ -44,17 +43,14 @@ public class RPGMoodPlugin extends JavaPlugin {
     private ZoneDiscoveryService zoneDiscoveryService;
     private PlayerLevelService playerLevelService;
     private SubzoneManager subzoneManager;
-    private boolean worldGuardActive;
+    private ZoneClusterService zoneClusterService;
+    private SquareMapHook squareMapHook;
 
     @Override
     public void onEnable() {
         instance = this;
 
-        if (Bukkit.getPluginManager().getPlugin("WorldGuard") != null) {
-            worldGuardActive = true;
-            getLogger().info("WorldGuard found — WORLDGUARD zone type enabled.");
-        }
-        // config.yml/zones.yml/triggers.yml are merged (new keys added, existing values kept)
+        // config.yml/triggers.yml are merged (new keys added, existing values kept)
         // inside ConfigManager's constructor via reload(). farming.yml has no owning manager
         // class, so it's merged here directly.
         ConfigMerge.mergeAndSave(this, "farming.yml");
@@ -75,6 +71,14 @@ public class RPGMoodPlugin extends JavaPlugin {
         this.zoneDiscoveryService = new ZoneDiscoveryService(this);
         this.playerLevelService = new PlayerLevelService(this);
         this.subzoneManager = new SubzoneManager(this);
+        this.zoneClusterService = new ZoneClusterService(this);
+        ZoneClusterMigration.migrateIfNeeded(this);
+        // SquareMapHook imports squaremap-api; constructing it when squaremap isn't
+        // installed triggers NoClassDefFoundError. Only load the class if present.
+        if (Bukkit.getPluginManager().getPlugin("squaremap") != null) {
+            this.squareMapHook = new SquareMapHook(this);
+            this.squareMapHook.enable();
+        }
 
         RPGMoodCommand rpgMoodCommand = new RPGMoodCommand(this);
         getCommand("rpgmood").setExecutor(rpgMoodCommand);
@@ -129,6 +133,9 @@ public class RPGMoodPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (squareMapHook != null) {
+            squareMapHook.disable();
+        }
         getLogger().info("RPGMood disabled.");
     }
 
@@ -153,16 +160,6 @@ public class RPGMoodPlugin extends JavaPlugin {
     public ZoneDiscoveryService getZoneDiscoveryService() { return zoneDiscoveryService; }
     public PlayerLevelService getPlayerLevelService() { return playerLevelService; }
     public SubzoneManager getSubzoneManager() { return subzoneManager; }
-
-    /** True if the location is inside the named WorldGuard region. Always false if WorldGuard isn't installed. */
-    public boolean isInsideWorldGuardRegion(Location location, String regionId) {
-        if (!worldGuardActive) {
-            return false;
-        }
-        try {
-            return WorldGuardHook.isInsideRegion(location, regionId);
-        } catch (NoClassDefFoundError e) {
-            return false;
-        }
-    }
+    public ZoneClusterService getZoneClusterService() { return zoneClusterService; }
+    public SquareMapHook getSquareMapHook() { return squareMapHook; }
 }

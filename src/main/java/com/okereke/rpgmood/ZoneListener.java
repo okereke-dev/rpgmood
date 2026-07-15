@@ -29,5 +29,6 @@ public class ZoneListener implements Listener {
         plugin.getZoneManager().handlePlayerQuit(event.getPlayer());
         plugin.getZoneScoreboardService().remove(event.getPlayer().getUniqueId());
         plugin.getSubzoneManager().handlePlayerQuit(event.getPlayer());
+        plugin.getZoneClusterService().handlePlayerQuit(event.getPlayer());
     }
 }

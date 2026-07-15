@@ -68,6 +68,9 @@ public class RPGMoodCommand implements CommandExecutor, TabCompleter {
             if (plugin.getAchievementManager() != null) {
                 plugin.getAchievementManager().reload();
             }
+            if (plugin.getSquareMapHook() != null) {
+                plugin.getSquareMapHook().reload();
+            }
             sender.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(plugin.getConfig().getString("messages.plugin_reloaded", "&aReloaded")));
             return true;
         }

@@ -14,8 +14,8 @@ import java.util.List;
  * In-game editor for the handful of numeric/boolean tunables players have asked to adjust
  * without editing YAML by hand — not a generic config editor (that's a much bigger project),
  * just steppers for the values that came up this session: spawn protection radius, the mob
- * scaling curve, night/thunder bonuses, and the weather-effects toggle. Writes straight
- * through {@code plugin.getConfig()} + {@code saveConfig()}, same as any other admin change.
+ * scaling curve, and night/thunder bonuses. Writes straight through {@code plugin.getConfig()}
+ * + {@code saveConfig()}, same as any other admin change.
  */
 public class AdminConfigMenu implements RPGMoodMenu {
 
@@ -26,7 +26,6 @@ public class AdminConfigMenu implements RPGMoodMenu {
     private static final int SLOT_PARITY_MINUS = 15, SLOT_PARITY_VALUE = 16, SLOT_PARITY_PLUS = 17;
     private static final int SLOT_NIGHT_MINUS = 18, SLOT_NIGHT_VALUE = 19, SLOT_NIGHT_PLUS = 20;
     private static final int SLOT_THUNDER_MINUS = 21, SLOT_THUNDER_VALUE = 22, SLOT_THUNDER_PLUS = 23;
-    private static final int SLOT_WEATHER_TOGGLE = 25;
 
     private final RPGMoodPlugin plugin;
     private final Inventory inventory;
@@ -53,13 +52,6 @@ public class AdminConfigMenu implements RPGMoodMenu {
                 "Night Bonus", "+" + plugin.getConfig().getInt("mob_scaling.night_bonus", 2) + " levels");
         renderStepper(SLOT_THUNDER_MINUS, SLOT_THUNDER_VALUE, SLOT_THUNDER_PLUS, Material.TRIDENT,
                 "Thunder Bonus", "+" + plugin.getConfig().getInt("mob_scaling.thunder_bonus", 2) + " levels");
-
-        boolean weatherEnabled = plugin.getConfig().getBoolean("weather_effects.enabled", true);
-        inventory.setItem(SLOT_WEATHER_TOGGLE, MenuUtil.icon(
-                weatherEnabled ? Material.LIME_DYE : Material.GRAY_DYE,
-                Component.text((weatherEnabled ? "✅ " : "❌ ") + "Weather Effects", weatherEnabled ? NamedTextColor.GREEN : NamedTextColor.GRAY),
-                List.of(Component.text("Fog + wind during storms.", NamedTextColor.DARK_GRAY),
-                        Component.text("Click to " + (weatherEnabled ? "disable" : "enable"), NamedTextColor.YELLOW))));
     }
 
     private void renderStepper(int minusSlot, int valueSlot, int plusSlot, Material material, String label, String value) {
@@ -84,11 +76,6 @@ public class AdminConfigMenu implements RPGMoodMenu {
             case SLOT_NIGHT_PLUS -> adjustInt("mob_scaling.night_bonus", 1, 0, Integer.MAX_VALUE);
             case SLOT_THUNDER_MINUS -> adjustInt("mob_scaling.thunder_bonus", -1, 0, Integer.MAX_VALUE);
             case SLOT_THUNDER_PLUS -> adjustInt("mob_scaling.thunder_bonus", 1, 0, Integer.MAX_VALUE);
-            case SLOT_WEATHER_TOGGLE -> {
-                boolean enabled = !plugin.getConfig().getBoolean("weather_effects.enabled", true);
-                plugin.getConfig().set("weather_effects.enabled", enabled);
-                plugin.saveConfig();
-            }
             default -> { return; }
         }
         render();

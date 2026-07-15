@@ -2,7 +2,6 @@ package com.okereke.rpgmood;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -85,36 +84,31 @@ public class ZoneDiscoveryService {
         return result;
     }
 
-    /** Biome group for a discovered zone key — parsed from the key for dynamic zones, read from zones.yml for curated BIOME-type ones, "—" otherwise (e.g. WORLDGUARD zones). */
+    /** Biome group for a discovered zone key — read from ZoneClusterService, "—" for anything else. */
     public String biomeOf(String zoneKey) {
-        if (zoneKey.startsWith("DYNAMIC_ZONE")) {
-            String[] parts = zoneKey.split("\\|");
-            return parts.length >= 2 ? parts[1] : "?";
-        }
-        var section = plugin.getConfigManager().getZones().getConfigurationSection("zones." + zoneKey);
-        if (section != null && "BIOME".equalsIgnoreCase(section.getString("type", "BIOME"))) {
-            return section.getString("id", "—");
+        if (zoneKey.startsWith(ZoneManager.CLUSTER_ZONE_PREFIX)) {
+            return plugin.getZoneClusterService().getBiomeGroup(zoneKey);
         }
         return "—";
     }
 
     /**
      * Current danger level for a discovered zone, or null if it can't be computed. Only works
-     * for dynamic zones (their key embeds an approximate region center); curated BIOME/
-     * WORLDGUARD zones in zones.yml have no single fixed location to measure from.
+     * for zone clusters (they have a stored representative location); curated BIOME/WORLDGUARD
+     * zones in zones.yml have no single fixed location to measure from.
      */
     public Integer dangerLevelOf(Player player, String zoneKey) {
-        Location location = approximateLocation(player, zoneKey);
+        Location location = approximateLocation(zoneKey);
         if (location == null) return null;
         int baseLevel = plugin.getMobScalingService().getBaseLevel(EntityType.ZOMBIE);
         return plugin.getMobScalingService().calculateLevelAt(location, baseLevel);
     }
 
-    /** Distance to the nearest zone the player has already discovered whose location can be reconstructed (dynamic zones only), or null if none qualify. */
+    /** Distance to the nearest zone the player has already discovered whose location can be reconstructed (zone clusters only), or null if none qualify. */
     public Double distanceToNearestDiscoveredZone(Player player) {
         double best = Double.MAX_VALUE;
         for (DiscoveredZone zone : getDiscoveries(player)) {
-            Location location = approximateLocation(player, zone.key());
+            Location location = approximateLocation(zone.key());
             if (location == null) continue;
             double distance = player.getLocation().distance(location);
             if (distance > 8.0 && distance < best) { // skip "you're standing in it right now"
@@ -124,21 +118,32 @@ public class ZoneDiscoveryService {
         return best == Double.MAX_VALUE ? null : best;
     }
 
-    /** Parses "DYNAMIC_ZONE|biome|world|regionX|regionZ" into an approximate region-center location. Null for curated zones (no single fixed point) or unloaded worlds. */
-    private Location approximateLocation(Player player, String zoneKey) {
-        String[] parts = zoneKey.split("\\|");
-        if (parts.length != 5 || !parts[0].equals("DYNAMIC_ZONE")) return null;
-        World world = Bukkit.getWorld(parts[2]);
-        if (world == null) return null;
-        try {
-            int regionX = Integer.parseInt(parts[3]);
-            int regionZ = Integer.parseInt(parts[4]);
-            double centerX = regionX * 256.0 + 128.0;
-            double centerZ = regionZ * 256.0 + 128.0;
-            return new Location(world, centerX, player.getLocation().getY(), centerZ);
-        } catch (NumberFormatException e) {
-            return null;
+    /** Resolves a zone cluster's stored representative location. Null for curated zones (no single fixed point) or unloaded worlds. */
+    private Location approximateLocation(String zoneKey) {
+        if (!zoneKey.startsWith(ZoneManager.CLUSTER_ZONE_PREFIX)) return null;
+        return plugin.getZoneClusterService().getRepresentativeLocation(zoneKey);
+    }
+
+    /** Removes legacy "DYNAMIC_ZONE|..." entries (from the pre-Phase-2 grid system) out of every recorded player's discovery list. Curated zones.yml entries are untouched. Called once by ZoneClusterMigration. */
+    public void purgeLegacyDynamicZoneDiscoveries() {
+        var playersSection = data.getConfigurationSection("players");
+        if (playersSection == null) return;
+        boolean changed = false;
+        for (String uuid : playersSection.getKeys(false)) {
+            String path = "players." + uuid;
+            List<Map<?, ?>> entries = data.getMapList(path);
+            List<Map<String, Object>> kept = new ArrayList<>();
+            for (Map<String, Object> entry : copyEntries(entries)) {
+                if (!String.valueOf(entry.get("key")).startsWith("DYNAMIC_ZONE")) {
+                    kept.add(entry);
+                }
+            }
+            if (kept.size() != entries.size()) {
+                data.set(path, kept);
+                changed = true;
+            }
         }
+        if (changed) scheduleSave();
     }
 
     @SuppressWarnings("unchecked")

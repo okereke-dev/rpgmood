@@ -39,7 +39,6 @@ public class AchievementManager {
             new Achievement("world_explorer", "World Explorer", "Discover 10 different zones", "🗺️", Category.EXPLORATION),
             new Achievement("seasoned_traveler", "Seasoned Traveler", "Discover 25 different zones", "🌍", Category.EXPLORATION),
             new Achievement("void_walker", "Void Walker", "Survive the End", "🌌", Category.EXPLORATION),
-            new Achievement("cartographer", "Cartographer", "Discover every zone defined in zones.yml", "🧭", Category.EXPLORATION),
             // -- Combat --
             new Achievement("slayer_initiate", "Slayer Initiate", "Kill 10 scaled mobs", "⚔️", Category.COMBAT),
             new Achievement("slayer_veteran", "Slayer Veteran", "Kill 100 scaled mobs", "🗡️", Category.COMBAT),
@@ -176,21 +175,13 @@ public class AchievementManager {
         }
     }
 
-    /** Called on every confirmed zone change. Tracks distinct zones for first_steps/world_explorer/seasoned_traveler/cartographer and checks void_walker. */
+    /** Called on every confirmed zone change. Tracks distinct zones for first_steps/world_explorer/seasoned_traveler and checks void_walker. */
     public void onZoneVisited(Player player, String zoneKey) {
         List<String> visited = addToProgressSet(player, "zones_visited", zoneKey);
 
         for (String id : achievementsForCount(visited.size(), new int[]{1, 10, 25},
                 new String[]{"first_steps", "world_explorer", "seasoned_traveler"})) {
             unlock(player, id);
-        }
-
-        ConfigurationSection zonesSection = plugin.getConfigManager().getZones().getConfigurationSection("zones");
-        if (zonesSection != null) {
-            Set<String> configuredZones = zonesSection.getKeys(false);
-            if (!configuredZones.isEmpty() && visited.containsAll(configuredZones)) {
-                unlock(player, "cartographer");
-            }
         }
 
         if (player.getWorld().getEnvironment() == World.Environment.THE_END) {
@@ -324,6 +315,28 @@ public class AchievementManager {
         if (allLegendary) {
             unlock(player, "dressed_to_kill");
         }
+    }
+
+    /** Removes legacy "DYNAMIC_ZONE|..." entries (from the pre-Phase-2 grid system) out of every recorded player's zones_visited progress. Does NOT revoke already-unlocked achievements — unlock state lives at the separate players.&lt;uuid&gt;.unlocked.* path, untouched here; only future threshold crossings are affected. Called once by ZoneClusterMigration. */
+    public void purgeLegacyDynamicZoneProgress() {
+        ConfigurationSection playersSection = data.getConfigurationSection("players");
+        if (playersSection == null) return;
+        boolean changed = false;
+        for (String uuid : playersSection.getKeys(false)) {
+            String path = "players." + uuid + ".progress.zones_visited";
+            List<String> visited = data.getStringList(path);
+            List<String> kept = new ArrayList<>();
+            for (String key : visited) {
+                if (!key.startsWith("DYNAMIC_ZONE")) {
+                    kept.add(key);
+                }
+            }
+            if (kept.size() != visited.size()) {
+                data.set(path, kept);
+                changed = true;
+            }
+        }
+        if (changed) scheduleSave();
     }
 
     // -- Helpers --
