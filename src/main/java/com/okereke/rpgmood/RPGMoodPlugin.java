@@ -13,9 +13,13 @@ import com.okereke.rpgmood.farming.animal.listener.AnimalProductTask;
 import com.okereke.rpgmood.farming.listener.CookingListener;
 import com.okereke.rpgmood.farming.listener.CropListener;
 import com.okereke.rpgmood.menu.RPGMoodMenuListener;
+import com.okereke.rpgmood.mob.AdvancedAiService;
+import com.okereke.rpgmood.mob.BowAimListener;
 import com.okereke.rpgmood.mob.MobAffixAuraTask;
 import com.okereke.rpgmood.mob.MobAffixCombatListener;
 import com.okereke.rpgmood.mob.MobAffixService;
+import com.okereke.rpgmood.mob.PackAssistListener;
+import com.okereke.rpgmood.mob.SmartAggroTask;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -30,6 +34,7 @@ public class RPGMoodPlugin extends JavaPlugin {
     private ConfigManager configManager;
     private MobScalingService mobScalingService;
     private MobAffixService mobAffixService;
+    private AdvancedAiService advancedAiService;
     private PlayerJournalService playerJournalService;
     private PlayerStatsService playerStatsService;
     private SeasonManager seasonManager;
@@ -59,6 +64,7 @@ public class RPGMoodPlugin extends JavaPlugin {
         this.zoneManager = new ZoneManager(this);
         this.mobScalingService = new MobScalingService(this);
         this.mobAffixService = new MobAffixService(this);
+        this.advancedAiService = new AdvancedAiService(this);
         this.playerJournalService = new PlayerJournalService(this);
         this.playerStatsService = new PlayerStatsService(this);
         this.seasonManager = new SeasonManager(this);
@@ -106,10 +112,15 @@ public class RPGMoodPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new RPGMoodMenuListener(), this);
         Bukkit.getPluginManager().registerEvents(new RPGLootAchievementListener(this), this);
         Bukkit.getPluginManager().registerEvents(new MobAffixCombatListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new BossDamageListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new BowAimListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new PackAssistListener(this), this);
+        Bukkit.getPluginManager().registerEvents(advancedAiService, this);
 
         new AmbientTask(this).runTaskTimer(this, 0L, 20L);
         new MobAuraEffect(this).runTaskTimer(this, 0L, 20L);
         new MobAffixAuraTask(this).runTaskTimer(this, 0L, 20L);
+        new SmartAggroTask(this).runTaskTimer(this, 20L, 20L);
         new SeasonTask(this).runTaskTimer(this, 0L, 1L);
         new AnimalProductTask(this).runTaskTimer(this, 0L, 20L);
         new AnimalFeedTask(this).runTaskTimer(this, 0L, 1200L);
@@ -147,6 +158,7 @@ public class RPGMoodPlugin extends JavaPlugin {
     public ConfigManager getConfigManager() { return configManager; }
     public MobScalingService getMobScalingService() { return mobScalingService; }
     public MobAffixService getMobAffixService() { return mobAffixService; }
+    public AdvancedAiService getAdvancedAiService() { return advancedAiService; }
     public PlayerJournalService getPlayerJournalService() { return playerJournalService; }
     public PlayerStatsService getPlayerStatsService() { return playerStatsService; }
     public SeasonManager getSeasonManager() { return seasonManager; }

@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.15.0] — 2026-07-15
+
+### Added
+- **Knockback resistance & attack speed** — scaled mobs gain progressive `KNOCKBACK_RESISTANCE` from level 25+ and a light `ATTACK_SPEED` bonus from level 20+ (when the attribute exists). Config: `mob_scaling.knockback_resist` / `attack_speed`.
+- **FOLLOW_RANGE hard cap** (`follow_range_cap: 36`) after level scaling so pathfinding never scans absurd distances.
+- **Smart aggro** (`SmartAggroTask`) — sync scan every second; level 15–29 aggro with line of sight (28 blocks); level 30+ omniscient aggro within 36 blocks. Budgeted retargets + per-mob cooldown.
+- **Dynamic archery** (`BowAimListener`) — clumsy spread (L1–7), laser aim at eyes (L15–29), predictive lead (L30+) with sculk-soul tracers; winter arrows apply Slowness on hit.
+- **Pack assist** — level 20+ mobs call up to 5 same-type allies in 20 blocks when hit (chunk cooldown).
+- **Archer kite** — Paper MobGoal for Skeleton/Stray/Pillager level 30+ backs away from melee players.
+- **Relentless creepers** — level 25+ shorter fuse; keep pathfinding toward the target while ignited.
+- **Seasonal combat** — Winter (+armor + damage resist + arrow chill), Autumn (+20% Swift affix chance), Summer (fire/desert mobs can burn on hit). Config: `mob_scaling.seasonal`.
+
 ## [1.10.0] — 2026-07-15
 
 ### Added

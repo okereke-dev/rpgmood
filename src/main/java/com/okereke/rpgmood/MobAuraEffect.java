@@ -70,23 +70,23 @@ public class MobAuraEffect extends BukkitRunnable {
         Object data = null;
 
         if (level >= 35) {
-            // 🔴 Elite — modest red glow at feet
-            particle = Particle.REDSTONE;
+            // Elite — modest red glow at feet (Paper 26.1+: DUST replaces REDSTONE)
+            particle = Particle.DUST;
             data = new Particle.DustOptions(Color.fromRGB(200, 30, 30), 0.8f);
         } else if (level >= 25) {
-            // 🟠 Dangerous — small orange ember
-            particle = Particle.REDSTONE;
+            // Dangerous — small orange ember
+            particle = Particle.DUST;
             data = new Particle.DustOptions(Color.fromRGB(220, 120, 20), 0.6f);
         } else if (level >= 15) {
-            // 🟡 Moderate — tiny warm yellow glow
-            particle = Particle.REDSTONE;
+            // Moderate — tiny warm yellow glow
+            particle = Particle.DUST;
             data = new Particle.DustOptions(Color.fromRGB(200, 200, 50), 0.4f);
         } else if (level >= 8) {
-            // 🔵 Enhanced — barely visible blue shimmer near feet
-            particle = Particle.SPELL_MOB;
+            // Enhanced — barely visible blue shimmer near feet
+            particle = Particle.DUST;
             data = new Particle.DustOptions(Color.fromRGB(60, 120, 255), 0.3f);
         } else {
-            // ⚪ Low levels (1-7) — no particles, barely scaled
+            // Low levels (1-7) — no particles, barely scaled
             return;
         }
 

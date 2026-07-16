@@ -17,15 +17,23 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class MobScalingService {
 
     /** Grid cell size (blocks) used to cache structure-proximity lookups; larger values reduce scan frequency at the cost of coarser granularity. */
     private static final int STRUCTURE_CACHE_GRID_SIZE = 512;
     private static final int STRUCTURE_CACHE_MAX_ENTRIES = 4096;
+
+    /** Bosses that must never be scaled below vanilla (same set as godslayer achievements). */
+    private static final Set<EntityType> BOSS_TYPES = Set.of(
+            EntityType.WARDEN,
+            EntityType.WITHER,
+            EntityType.ELDER_GUARDIAN,
+            EntityType.ENDER_DRAGON
+    );
 
     /**
      * PDC key storing the mob's scaled level as an Integer, e.g. for other plugins (RPGLoot) to read
@@ -132,48 +140,78 @@ public class MobScalingService {
         }
         level = scaleEvent.getLevel();
 
-        double statMultiplier = calculateStatMultiplier(level,
-                plugin.getConfig().getDouble("mob_scaling.early_game_fraction", 0.85),
-                plugin.getConfig().getInt("mob_scaling.parity_level", 8));
-        double armor = Math.max(0.0, (level - 1) * plugin.getConfig().getDouble("mob_scaling.armor_per_level", 0.25));
+        double statMultiplier = resolveStatMultiplier(entity.getType(), level);
+        double armorBonus = Math.max(0.0, (level - 1) * plugin.getConfig().getDouble("mob_scaling.armor_per_level", 0.25));
         double speedBonus = Math.max(0.0, (level - 1) * plugin.getConfig().getDouble("mob_scaling.speed_per_level", 0.0015));
 
         // Multiplier is relative to each mob's own vanilla baseline (getDefaultValue()), not a
         // flat constant — an Enderman scales off its own 40 HP, a Zombie off its own 20, etc.
         // Health and damage share the same curve so a scaled mob doesn't end up tanky-but-weak.
-        AttributeInstance maxHealth = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        // Paper 26.1+: Attribute fields no longer use the GENERIC_ prefix.
+        AttributeInstance maxHealth = entity.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth != null) {
             double health = Math.max(4.0, maxHealth.getDefaultValue() * statMultiplier);
             maxHealth.setBaseValue(health);
             entity.setHealth(Math.min(entity.getHealth(), health));
         }
 
-        AttributeInstance damageAttribute = entity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+        AttributeInstance damageAttribute = entity.getAttribute(Attribute.ATTACK_DAMAGE);
         if (damageAttribute != null) {
             double damage = Math.max(0.1, damageAttribute.getDefaultValue() * statMultiplier);
             damageAttribute.setBaseValue(damage);
         }
 
-        AttributeInstance armorAttribute = entity.getAttribute(Attribute.GENERIC_ARMOR);
+        AttributeInstance armorAttribute = entity.getAttribute(Attribute.ARMOR);
         if (armorAttribute != null) {
-            armorAttribute.setBaseValue(Math.max(0.0, armor));
+            armorAttribute.setBaseValue(Math.max(0.0, armorAttribute.getDefaultValue() + armorBonus));
         }
 
-        AttributeInstance speedAttribute = entity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
+        AttributeInstance speedAttribute = entity.getAttribute(Attribute.MOVEMENT_SPEED);
         if (speedAttribute != null) {
             speedAttribute.setBaseValue(Math.max(0.01, speedAttribute.getBaseValue() + speedBonus));
         }
 
         // Weak early mobs also notice the player from a bit less far away; strong late-game
         // mobs are just as (or more) alert than vanilla — same curve as health/damage.
-        AttributeInstance followRangeAttribute = entity.getAttribute(Attribute.GENERIC_FOLLOW_RANGE);
+        // Cap follow range so pathfinding never scans absurd distances (lag safety).
+        AttributeInstance followRangeAttribute = entity.getAttribute(Attribute.FOLLOW_RANGE);
         if (followRangeAttribute != null) {
             double followRange = Math.max(4.0, followRangeAttribute.getDefaultValue() * statMultiplier);
-            followRangeAttribute.setBaseValue(followRange);
+            double cap = plugin.getConfig().getDouble("mob_scaling.follow_range_cap", 36.0);
+            followRangeAttribute.setBaseValue(clampFollowRange(followRange, cap));
+        }
+
+        // Knockback resistance (level 25+): progressive resistance so Knockback II doesn't delete them.
+        AttributeInstance knockbackAttribute = entity.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
+        if (knockbackAttribute != null) {
+            double kb = calculateKnockbackResist(
+                    level,
+                    plugin.getConfig().getInt("mob_scaling.knockback_resist.min-level", 25),
+                    plugin.getConfig().getDouble("mob_scaling.knockback_resist.per-level", 0.02),
+                    plugin.getConfig().getDouble("mob_scaling.knockback_resist.max", 0.85)
+            );
+            if (kb > 0) {
+                knockbackAttribute.setBaseValue(Math.min(1.0, knockbackAttribute.getDefaultValue() + kb));
+            }
+        }
+
+        // Attack speed (level 20+): light melee pressure bonus when the attribute exists.
+        AttributeInstance attackSpeedAttribute = entity.getAttribute(Attribute.ATTACK_SPEED);
+        if (attackSpeedAttribute != null) {
+            double bonus = calculateAttackSpeedBonus(
+                    level,
+                    plugin.getConfig().getInt("mob_scaling.attack_speed.min-level", 20),
+                    plugin.getConfig().getDouble("mob_scaling.attack_speed.per-level", 0.02),
+                    plugin.getConfig().getDouble("mob_scaling.attack_speed.max-bonus", 0.4)
+            );
+            if (bonus > 0) {
+                attackSpeedAttribute.setBaseValue(Math.max(0.1, attackSpeedAttribute.getDefaultValue() + bonus));
+            }
         }
 
         entity.addScoreboardTag("rpgmood_scaled");
         entity.getPersistentDataContainer().set(levelKey, PersistentDataType.INTEGER, level);
+
 
         // Only set a custom name when the floating tag is actually shown — visual level
         // indication otherwise comes from MobAuraEffect (particle auras) and the affix
@@ -252,6 +290,57 @@ public class MobScalingService {
     public static double calculateStatMultiplier(int level, double earlyGameFraction, int parityLevel) {
         double perLevelGrowth = (1.0 - earlyGameFraction) / Math.max(1, parityLevel - 1);
         return earlyGameFraction + (level - 1) * perLevelGrowth;
+    }
+
+    /** True for the four major bosses — never scaled below vanilla stats. */
+    public static boolean isBoss(EntityType type) {
+        return type != null && BOSS_TYPES.contains(type);
+    }
+
+    /**
+     * Applies the early-game curve, then floors bosses at 1.0 so Warden/Wither/etc. are never
+     * weaker than vanilla. Used by {@link #applyScaling} and by sonic-boom damage scaling.
+     */
+    /** Floors boss multipliers at 1.0; leaves normal mobs unchanged. */
+    public static double applyBossFloor(EntityType type, double multiplier) {
+        return isBoss(type) ? Math.max(1.0, multiplier) : multiplier;
+    }
+
+    /** Knockback resistance added from {@code minLevel} upward, clamped to {@code max}. */
+    public static double calculateKnockbackResist(int level, int minLevel, double perLevel, double max) {
+        if (level < minLevel || perLevel <= 0 || max <= 0) return 0.0;
+        return Math.min(max, (level - minLevel) * perLevel);
+    }
+
+    /** Flat attack-speed bonus from {@code minLevel} upward, clamped to {@code maxBonus}. */
+    public static double calculateAttackSpeedBonus(int level, int minLevel, double perLevel, double maxBonus) {
+        if (level < minLevel || perLevel <= 0 || maxBonus <= 0) return 0.0;
+        return Math.min(maxBonus, (level - minLevel) * perLevel);
+    }
+
+    /** Caps scaled follow range so pathfinding never exceeds the safety limit. */
+    public static double clampFollowRange(double scaled, double cap) {
+        if (cap <= 0) return scaled;
+        return Math.min(scaled, cap);
+    }
+
+    public double resolveStatMultiplier(EntityType type, int level) {
+        double multiplier = calculateStatMultiplier(level,
+                plugin.getConfig().getDouble("mob_scaling.early_game_fraction", 0.85),
+                plugin.getConfig().getInt("mob_scaling.parity_level", 8));
+        return applyBossFloor(type, multiplier);
+    }
+
+    /**
+     * Multiplier for a living entity that already has {@code rpgmood:level} in its PDC.
+     * Returns 1.0 if the entity was never scaled (no level tag).
+     */
+    public double resolveStatMultiplier(LivingEntity entity) {
+        Integer level = entity.getPersistentDataContainer().get(levelKey, PersistentDataType.INTEGER);
+        if (level == null || level <= 0) {
+            return 1.0;
+        }
+        return resolveStatMultiplier(entity.getType(), level);
     }
 
     public int getBaseLevel(EntityType type) {

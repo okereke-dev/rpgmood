@@ -72,6 +72,65 @@ mob_scaling:
   parity_level: 8
   armor_per_level: 0.25
   speed_per_level: 0.0015
+  # Hard cap on FOLLOW_RANGE after level scaling — pathfinding safety (never scan beyond this).
+  follow_range_cap: 36
+  # Progressive knockback resistance from min-level upward (Knockback II less effective).
+  knockback_resist:
+    min-level: 25
+    per-level: 0.02
+    max: 0.85
+  # Light attack-speed bonus when the mob exposes ATTACK_SPEED (many monsters ignore it).
+  attack_speed:
+    min-level: 20
+    per-level: 0.02
+    max-bonus: 0.4
+  # Smart aggro: sync scan every second; forced setTarget for high-level mobs (see SmartAggroTask).
+  smart_aggro:
+    enabled: true
+    los-min-level: 15
+    los-radius: 28
+    omniscient-min-level: 30
+    omniscient-radius: 36
+    max-retargets-per-tick: 40
+    cooldown-ticks: 40
+  # Bow / crossbow aim by mob level (EntityShootBowEvent).
+  archery:
+    enabled: true
+    clumsy-max-level: 7
+    clumsy-spread: 0.35
+    laser-min-level: 15
+    predictive-min-level: 30
+    arrow-speed: 1.6
+    tracer-particles: true
+  # Pack assist / archer kite / creeper fuse (Paper MobGoals + listeners).
+  advanced_ai:
+    enabled: true
+    pack:
+      min-level: 20
+      radius: 20
+      max-allies: 5
+      chunk-cooldown-seconds: 3
+    kite:
+      min-level: 30
+      keep-distance: 8
+    creeper:
+      min-level: 25
+      # Max fuse ticks at min-level; shortens toward min-fuse as level rises.
+      base-fuse-ticks: 30
+      min-fuse-ticks: 12
+      advance-while-ignited: true
+  # Seasonal combat modifiers applied at spawn (uses SeasonManager).
+  seasonal:
+    enabled: true
+    winter:
+      armor-bonus: 2.0
+      arrow-slowness-ticks: 40
+      arrow-slowness-amplifier: 0
+    autumn:
+      swift-chance-bonus: 0.20
+    summer:
+      burn-chance: 0.35
+      burn-ticks: 60
   # Extra flat level added to any mob computed between 13000-23000 ticks (vanilla night).
   night_bonus: 2
   # Extra flat level added to any mob computed while it's thundering in that world.
@@ -95,6 +154,10 @@ mob_scaling:
     CREEPER: 3
     ENDERMAN: 4
     WITHER_SKELETON: 5
+    # Bosses start well above parity_level so they only get buffs, never the early-game nerf.
+    ELDER_GUARDIAN: 14
+    WITHER: 18
+    WARDEN: 20
   biome-bonuses:
     PLAINS: 0
     FOREST: 1
@@ -106,6 +169,7 @@ mob_scaling:
     SWAMP: 2
     MOUNTAINS: 3
     BADLANDS: 2
+    DEEP_DARK: 5
     NETHER_WASTES: 3
     SOUL_SAND_VALLEY: 4
     CRIMSON_FOREST: 3
@@ -117,6 +181,7 @@ mob_scaling:
     woodland_mansion: 4
     ocean_monument: 4
     fortress: 3
+    ancient_city: 5
   # RPG-flavored mob modifiers rolled at spawn on top of numeric scaling — see the Mob Affix
   # System. Chance bands pick the highest threshold at or below the mob's level.
   affixes:

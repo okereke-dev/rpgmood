@@ -14,7 +14,6 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 
 /**
  * Rolls and applies RPG-flavored affixes onto freshly-scaled mobs — some (Swift, Wraith,
@@ -26,16 +25,17 @@ import java.util.UUID;
  */
 public class MobAffixService {
 
-    private static final UUID SWIFT_SPEED_MODIFIER = UUID.fromString("a97a4c30-0000-4000-8000-000000000001");
-    private static final UUID REGEN_TOUGHNESS_MODIFIER = UUID.fromString("a97a4c30-0000-4000-8000-000000000002");
-
     private final RPGMoodPlugin plugin;
     private final NamespacedKey affixesKey;
+    private final NamespacedKey swiftSpeedKey;
+    private final NamespacedKey regenToughnessKey;
     private final Random random = new Random();
 
     public MobAffixService(RPGMoodPlugin plugin) {
         this.plugin = plugin;
         this.affixesKey = new NamespacedKey(plugin, "affixes");
+        this.swiftSpeedKey = new NamespacedKey(plugin, "affix_swift");
+        this.regenToughnessKey = new NamespacedKey(plugin, "affix_regen_toughness");
     }
 
     public NamespacedKey getAffixesKey() {
@@ -64,7 +64,16 @@ public class MobAffixService {
 
         List<MobAffix> pool = new ArrayList<>(List.of(MobAffix.values()));
         List<MobAffix> rolled = new ArrayList<>();
-        rolled.add(pool.remove(random.nextInt(pool.size())));
+
+        // Autumn: elevated chance the first affix is Swift (Hunt season).
+        double autumnSwift = plugin.getAdvancedAiService() != null
+                ? plugin.getAdvancedAiService().getAutumnSwiftBonus() : 0.0;
+        if (autumnSwift > 0 && pool.contains(MobAffix.SWIFT) && random.nextDouble() < autumnSwift) {
+            pool.remove(MobAffix.SWIFT);
+            rolled.add(MobAffix.SWIFT);
+        } else {
+            rolled.add(pool.remove(random.nextInt(pool.size())));
+        }
 
         int maxPerMob = section.getInt("max-per-mob", 2);
         if (maxPerMob >= 2 && random.nextDouble() < chanceForLevel(section, "second-affix-chance-by-level", level)) {
@@ -125,24 +134,24 @@ public class MobAffixService {
     }
 
     private void applySwift(LivingEntity entity, int level) {
-        AttributeInstance speed = entity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
+        AttributeInstance speed = entity.getAttribute(Attribute.MOVEMENT_SPEED);
         if (speed == null) return;
         ConfigurationSection roster = plugin.getConfig().getConfigurationSection("mob_scaling.affixes.roster.SWIFT");
         int pct = level >= 25
                 ? (roster != null ? roster.getInt("speed-bonus-pct-elite", 40) : 40)
                 : (roster != null ? roster.getInt("speed-bonus-pct", 25) : 25);
-        speed.addModifier(new AttributeModifier(SWIFT_SPEED_MODIFIER, "rpgmood_affix_swift", pct / 100.0, AttributeModifier.Operation.MULTIPLY_SCALAR_1));
+        speed.addModifier(new AttributeModifier(swiftSpeedKey, pct / 100.0, AttributeModifier.Operation.MULTIPLY_SCALAR_1));
     }
 
     private void applyRegenerating(LivingEntity entity, int level) {
         int amplifier = level >= 25 ? 1 : 0;
         entity.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, amplifier, true, false));
 
-        AttributeInstance toughness = entity.getAttribute(Attribute.GENERIC_ARMOR_TOUGHNESS);
+        AttributeInstance toughness = entity.getAttribute(Attribute.ARMOR_TOUGHNESS);
         if (toughness != null) {
             ConfigurationSection roster = plugin.getConfig().getConfigurationSection("mob_scaling.affixes.roster.REGENERATING");
             double bonus = roster != null ? roster.getDouble("armor-toughness-bonus", 2.0) : 2.0;
-            toughness.addModifier(new AttributeModifier(REGEN_TOUGHNESS_MODIFIER, "rpgmood_affix_regen_toughness", bonus, AttributeModifier.Operation.ADD_NUMBER));
+            toughness.addModifier(new AttributeModifier(regenToughnessKey, bonus, AttributeModifier.Operation.ADD_NUMBER));
         }
     }
 }

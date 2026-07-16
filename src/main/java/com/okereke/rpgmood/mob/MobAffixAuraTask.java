@@ -74,7 +74,7 @@ public class MobAffixAuraTask extends BukkitRunnable {
 
     private void spawnMarker(LivingEntity entity) {
         try {
-            entity.getWorld().spawnParticle(Particle.REDSTONE,
+            entity.getWorld().spawnParticle(Particle.DUST,
                     entity.getLocation().add(0, entity.getHeight() + 0.3, 0),
                     1, 0.2, 0.2, 0.2, 0,
                     new Particle.DustOptions(Color.fromRGB(180, 40, 220), 0.5f));

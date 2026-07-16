@@ -88,7 +88,7 @@ public class MobAffixCombatListener implements Listener {
         double tickDamagePct = roster != null ? roster.getDouble("BLEEDING.tick-damage-pct", 0.30) : 0.30;
         int durationTicks = roster != null ? roster.getInt("BLEEDING.duration-ticks", 100) : 100;
 
-        AttributeInstance damageAttr = mob.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
+        AttributeInstance damageAttr = mob.getAttribute(Attribute.ATTACK_DAMAGE);
         double baseDamage = damageAttr != null ? damageAttr.getValue() : 2.0;
         double tickDamage = Math.max(0.5, baseDamage * tickDamagePct);
 
@@ -112,7 +112,7 @@ public class MobAffixCombatListener implements Listener {
                 player.damage(tickDamage, mob);
                 player.setVelocity(velocity);
                 bleedingPlayers.remove(uuid);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 25, 0, true, false));
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 25, 0, true, false));
             }
         }.runTaskTimer(plugin, 20L, 20L);
 
@@ -134,6 +134,6 @@ public class MobAffixCombatListener implements Listener {
         if (random.nextDouble() >= procChance) return;
 
         int durationTicks = roster != null ? roster.getInt("CHILLING.duration-ticks", 60) : 60;
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, durationTicks, 1));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, durationTicks, 1));
     }
 }

@@ -39,6 +39,9 @@ public class MobSpawnListener implements Listener {
         int level = plugin.getMobScalingService().applyScaling(entity);
         if (level > 0) {
             plugin.getMobAffixService().rollAndApply(entity, level);
+            if (plugin.getAdvancedAiService() != null) {
+                plugin.getAdvancedAiService().applyOnSpawn(entity, level);
+            }
             maybeAnnounce(entity, level);
         }
     }
